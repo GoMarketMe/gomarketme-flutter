@@ -1,0 +1,29 @@
+# Build output
+/build/
+/ios/Flutter/Flutter.framework
+/android/.gradle/
+/android/app/build/
+
+# Dart
+.dart_tool/
+/packages
+.pub/
+/.idea/
+/*.iml
+*.iml
+*.ipr
+*.iws
+*.swp
+*.lock
+*.log
+
+# Flutter specific
+**/build/
+**/ios/.generated/
+.dart_tool/
+/.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-plugins-dependencies
+.pivotal
+.pivotal.*
