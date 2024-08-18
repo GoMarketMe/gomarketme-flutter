@@ -9,3 +9,6 @@
 
 ## 1.2.0
 * Support for http 1.2.2
+
+## 1.3.0
+* Updated dependencies

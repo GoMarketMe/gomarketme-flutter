@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:device_info/device_info.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -123,7 +123,7 @@ class GoMarketMe {
 
   static Map<String, dynamic> _readAndroidBuildData(AndroidDeviceInfo build) {
     return <String, dynamic>{
-      'androidId': build.androidId,
+      'androidId': build.id,
       'board': build.board,
       'bootloader': build.bootloader,
       'brand': build.brand,
