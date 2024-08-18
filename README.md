@@ -19,7 +19,7 @@ This will add a line like this to your package's pubspec.yaml (and run an implic
 
 ```yaml
 dependencies:
-  gomarketme: ^1.3.0
+  gomarketme: ^1.3.1
 ```
 
 ---
