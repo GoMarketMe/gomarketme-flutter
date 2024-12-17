@@ -15,3 +15,6 @@
 
 ## 1.3.1
 * Updated additional dependencies
+
+## 1.3.2
+* Bypassed DNS issue

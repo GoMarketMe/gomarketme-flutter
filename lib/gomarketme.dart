@@ -15,10 +15,11 @@ class GoMarketMe {
   String _affiliateCampaignCode = '';
   String _deviceId = '';
   static const String sdkInitializationUrl =
-      'https://api.gomarketme.net/v1/sdk-initialization';
+      'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/sdk-initialization';
   static const String systemInfoUrl =
-      'https://api.gomarketme.net/v1/mobile/system-info';
-  static const String eventUrl = 'https://api.gomarketme.net/v1/event';
+      'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/mobile/system-info';
+  static const String eventUrl =
+      'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/event';
 
   factory GoMarketMe() => _instance;
 
