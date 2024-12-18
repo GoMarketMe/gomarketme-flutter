@@ -18,3 +18,6 @@
 
 ## 1.3.2
 * Bypassed DNS issue
+
+## 1.4.0
+* Improved attribution

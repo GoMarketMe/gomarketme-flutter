@@ -8,10 +8,12 @@ import 'dart:convert';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
 
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
   String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
+  String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
   String _affiliateCampaignCode = '';
   String _deviceId = '';
   static const String sdkInitializationUrl =
@@ -52,12 +54,14 @@ class GoMarketMe {
     );
   }
 
-  static Future<Map<String, dynamic>> _getSystemInfo() async {
+  Future<Map<String, dynamic>> _getSystemInfo() async {
     final deviceInfoPlugin = DeviceInfoPlugin();
     var deviceData = <String, dynamic>{};
     try {
       if (Platform.isAndroid) {
-        deviceData = _readAndroidBuildData(await deviceInfoPlugin.androidInfo);
+        var androidId = await _getAndroidId();
+        deviceData = _readAndroidBuildData(
+            await deviceInfoPlugin.androidInfo, androidId);
       } else if (Platform.isIOS) {
         deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
       }
@@ -122,9 +126,42 @@ class GoMarketMe {
     }
   }
 
-  static Map<String, dynamic> _readAndroidBuildData(AndroidDeviceInfo build) {
+  String _generateAndroidId() {
+    const characters =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+
+    String getRandomString(int length) {
+      return List.generate(
+              length, (index) => characters[random.nextInt(characters.length)])
+          .join();
+    }
+
+    final part1 = getRandomString(4);
+    final part2 = getRandomString(6);
+    final part3 = getRandomString(3);
+
+    return '$part1.$part2.$part3';
+  }
+
+  Future<String> _getAndroidId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? androidId = prefs.getString(sdkAndroidIdKey);
+
+    if (androidId != null) {
+      return androidId;
+    } else {
+      androidId = _generateAndroidId();
+      await prefs.setString(sdkAndroidIdKey, androidId);
+
+      return androidId;
+    }
+  }
+
+  static Map<String, dynamic> _readAndroidBuildData(
+      AndroidDeviceInfo build, String androidId) {
     return <String, dynamic>{
-      'androidId': build.id,
+      'androidId': androidId,
       'board': build.board,
       'bootloader': build.bootloader,
       'brand': build.brand,
