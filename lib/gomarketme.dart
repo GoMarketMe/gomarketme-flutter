@@ -10,44 +10,150 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 
+class GoMarketMeAffiliateMarketingData {
+  final Campaign campaign;
+  final Affiliate affiliate;
+  final SaleDistribution saleDistribution;
+  final String affiliateCampaignCode;
+  final String deviceId;
+  final String? offerCode;
+
+  GoMarketMeAffiliateMarketingData({
+    required this.campaign,
+    required this.affiliate,
+    required this.saleDistribution,
+    required this.affiliateCampaignCode,
+    required this.deviceId,
+    this.offerCode,
+  });
+
+  factory GoMarketMeAffiliateMarketingData.fromJson(Map<String, dynamic> json) {
+    return GoMarketMeAffiliateMarketingData(
+      campaign: Campaign.fromJson(json['campaign']),
+      affiliate: Affiliate.fromJson(json['affiliate']),
+      saleDistribution: SaleDistribution.fromJson(json['sale_distribution']),
+      affiliateCampaignCode: json['affiliate_campaign_code'] ?? '',
+      deviceId: json['device_id'] ?? '',
+      offerCode: json['offer_code'],
+    );
+  }
+}
+
+class Campaign {
+  final String id;
+  final String name;
+  final String status;
+  final String type;
+  final String? publicLinkUrl;
+
+  Campaign({
+    required this.id,
+    required this.name,
+    required this.status,
+    required this.type,
+    this.publicLinkUrl,
+  });
+
+  factory Campaign.fromJson(Map<String, dynamic> json) {
+    return Campaign(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      status: json['status'] ?? '',
+      type: json['type'] ?? '',
+      publicLinkUrl: json['public_link_url'],
+    );
+  }
+}
+
+class Affiliate {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String countryCode;
+  final String instagramAccount;
+  final String tiktokAccount;
+  final String xAccount;
+
+  Affiliate({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.countryCode,
+    required this.instagramAccount,
+    required this.tiktokAccount,
+    required this.xAccount,
+  });
+
+  factory Affiliate.fromJson(Map<String, dynamic> json) {
+    return Affiliate(
+      id: json['id'] ?? '',
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      countryCode: json['country_code'] ?? '',
+      instagramAccount: json['instagram_account'] ?? '',
+      tiktokAccount: json['tiktok_account'] ?? '',
+      xAccount: json['x_account'] ?? '',
+    );
+  }
+}
+
+class SaleDistribution {
+  final String platformPercentage;
+  final String affiliatePercentage;
+
+  SaleDistribution({
+    required this.platformPercentage,
+    required this.affiliatePercentage,
+  });
+
+  factory SaleDistribution.fromJson(Map<String, dynamic> json) {
+    return SaleDistribution(
+      platformPercentage: json['platform_percentage'] ?? '',
+      affiliatePercentage: json['affiliate_percentage'] ?? '',
+    );
+  }
+}
+
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
-  String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
-  String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
-  String _affiliateCampaignCode = '';
-  String _deviceId = '';
+  static const String sdkType = 'Flutter';
+  static const String sdkVersion = '2.0.0';
+  static const String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
+  static const String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
   static const String sdkInitializationUrl =
       'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/sdk-initialization';
   static const String systemInfoUrl =
       'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/mobile/system-info';
   static const String eventUrl =
       'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/event';
+  String _affiliateCampaignCode = '';
+  String _deviceId = '';
 
   factory GoMarketMe() => _instance;
 
   GoMarketMe._internal();
 
-  Future<void> initialize(String apiKey) async {
+  Future<GoMarketMeAffiliateMarketingData?> initialize(String apiKey) async {
+    GoMarketMeAffiliateMarketingData? output;
     try {
-      bool isSDKInitialized = await this.isSDKInitialized();
+      bool isSDKInitialized = await _isSDKInitialized();
       if (!isSDKInitialized) {
         await _postSDKInitialization(apiKey);
       }
       var systemInfo = await _getSystemInfo();
-      await _postSystemInfo(systemInfo, apiKey);
+      output = await _postSystemInfo(systemInfo, apiKey);
       await _addListener(apiKey);
     } catch (e) {
       print('Error initializing GoMarketMe: $e');
     }
+    return output;
   }
 
   Future<void> _addListener(String apiKey) async {
     InAppPurchase.instance.purchaseStream.listen(
       (purchaseDetailsList) async {
-        if (_affiliateCampaignCode.isNotEmpty) {
-          var productIds = await _fetchPurchases(purchaseDetailsList, apiKey);
-          await _fetchPurchaseProducts(productIds, apiKey);
-        }
+        var productIds = await _fetchPurchases(purchaseDetailsList, apiKey);
+        await _fetchPurchaseProducts(productIds, apiKey);
       },
       onDone: () => print('Purchase stream closed'),
       onError: (error) => print('Error in purchase stream: $error'),
@@ -59,11 +165,12 @@ class GoMarketMe {
     var deviceData = <String, dynamic>{};
     try {
       if (Platform.isAndroid) {
-        var androidId = await _getAndroidId();
+        _deviceId = await _getAndroidId();
         deviceData = _readAndroidBuildData(
-            await deviceInfoPlugin.androidInfo, androidId);
+            await deviceInfoPlugin.androidInfo, _deviceId);
       } else if (Platform.isIOS) {
         deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
+        _deviceId = deviceData['identifierForVendor'];
       }
     } catch (e) {
       print('Failed to get platform version: $e');
@@ -89,7 +196,7 @@ class GoMarketMe {
       final response = await http.post(uri,
           headers: {"Content-Type": "application/json", "x-api-key": apiKey});
       if (response.statusCode == 200) {
-        markSDKAsInitialized();
+        _markSDKAsInitialized();
       } else {
         print(
             'Failed to mark SDK as Initialized. Status code: ${response.statusCode}');
@@ -99,24 +206,23 @@ class GoMarketMe {
     }
   }
 
-  Future<void> _postSystemInfo(
-      Map<String, dynamic> systemInfo, String apiKey) async {
+  Future<GoMarketMeAffiliateMarketingData?> _postSystemInfo(
+      Map<String, dynamic> data, String apiKey) async {
+    GoMarketMeAffiliateMarketingData? output;
     final uri = Uri.parse(systemInfoUrl);
     try {
+      data['sdk_type'] = sdkType;
+      data['sdk_version'] = sdkVersion;
       final response = await http.post(
         uri,
         headers: {"Content-Type": "application/json", "x-api-key": apiKey},
-        body: json.encode(systemInfo),
+        body: json.encode(data),
       );
       if (response.statusCode == 200) {
         print('System Info sent successfully');
-        var responseData = json.decode(response.body);
-        if (responseData.containsKey('affiliate_campaign_code')) {
-          _affiliateCampaignCode = responseData['affiliate_campaign_code'];
-        }
-        if (responseData.containsKey('device_id')) {
-          _deviceId = responseData['device_id'];
-        }
+        output = GoMarketMeAffiliateMarketingData.fromJson(
+            json.decode(response.body));
+        _affiliateCampaignCode = output.affiliateCampaignCode;
       } else {
         print(
             'Failed to send system info. Status code: ${response.statusCode}');
@@ -124,6 +230,7 @@ class GoMarketMe {
     } catch (e) {
       print('Error sending system info to server: $e');
     }
+    return output;
   }
 
   String _generateAndroidId() {
@@ -211,7 +318,7 @@ class GoMarketMe {
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
         await _sendEventToServer(
-            json.encode(serializePurchaseDetails(purchase)),
+            json.encode(_serializePurchaseDetails(purchase)),
             'purchase',
             apiKey);
         if (purchase.productID.isNotEmpty &&
@@ -235,7 +342,7 @@ class GoMarketMe {
     }
     for (var product in response.productDetails) {
       await _sendEventToServer(
-          json.encode(serializeProductDetails(product)), 'product', apiKey);
+          json.encode(_serializeProductDetails(product)), 'product', apiKey);
     }
   }
 
@@ -267,7 +374,7 @@ class GoMarketMe {
     }
   }
 
-  Map<String, dynamic> serializePurchaseDetails(PurchaseDetails purchase) {
+  Map<String, dynamic> _serializePurchaseDetails(PurchaseDetails purchase) {
     return {
       'productID': purchase.productID,
       'purchaseID': purchase.purchaseID ?? '',
@@ -292,7 +399,7 @@ class GoMarketMe {
     };
   }
 
-  Map<String, dynamic> serializeProductDetails(ProductDetails product) {
+  Map<String, dynamic> _serializeProductDetails(ProductDetails product) {
     return {
       'productID': product.id,
       'productTitle': product.title,
@@ -305,7 +412,7 @@ class GoMarketMe {
     };
   }
 
-  Future<bool> markSDKAsInitialized() async {
+  Future<bool> _markSDKAsInitialized() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       bool result = await prefs.setBool(sdkInitializedKey, true);
@@ -316,7 +423,7 @@ class GoMarketMe {
     }
   }
 
-  Future<bool> isSDKInitialized() async {
+  Future<bool> _isSDKInitialized() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.getBool(sdkInitializedKey)!;

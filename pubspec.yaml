@@ -1,7 +1,8 @@
 name: gomarketme
-version: 1.4.0
+version: 2.0.0
 description: Affiliate Marketing for Flutter-Based iOS and Android Apps.
 homepage: https://gomarketme.co
+repository: https://github.com/GoMarketMe/gomarketme-flutter
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

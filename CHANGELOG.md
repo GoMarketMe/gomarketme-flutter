@@ -21,3 +21,7 @@
 
 ## 1.4.0
 * Improved attribution
+
+## 2.0.0
+* The SDK is now two-way, returning details about the affiliate and affiliate campaign.
+* Added support for offer codes.
