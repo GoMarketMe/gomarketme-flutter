@@ -25,3 +25,6 @@
 ## 2.0.0
 * The SDK is now two-way, returning details about the affiliate and affiliate campaign.
 * Added support for offer codes.
+
+## 2.0.1
+* Updated README
