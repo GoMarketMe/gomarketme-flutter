@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
@@ -117,7 +118,7 @@ class SaleDistribution {
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
   static const String sdkType = 'Flutter';
-  static const String sdkVersion = '2.0.1';
+  static const String sdkVersion = '2.0.2';
   static const String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
   static const String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
   static const String sdkInitializationUrl =
@@ -128,6 +129,7 @@ class GoMarketMe {
       'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/event';
   String _affiliateCampaignCode = '';
   String _deviceId = '';
+  String _packageName = '';
 
   factory GoMarketMe() => _instance;
 
@@ -140,6 +142,7 @@ class GoMarketMe {
       if (!isSDKInitialized) {
         await _postSDKInitialization(apiKey);
       }
+      _packageName = (await PackageInfo.fromPlatform()).packageName;
       var systemInfo = await _getSystemInfo();
       output = await _postSystemInfo(systemInfo, apiKey);
       await _addListener(apiKey);
@@ -152,8 +155,7 @@ class GoMarketMe {
   Future<void> _addListener(String apiKey) async {
     InAppPurchase.instance.purchaseStream.listen(
       (purchaseDetailsList) async {
-        var productIds = await _fetchPurchases(purchaseDetailsList, apiKey);
-        await _fetchPurchaseProducts(productIds, apiKey);
+        await _fetchConsolidatedPurchases(purchaseDetailsList, apiKey);
       },
       onDone: () => print('Purchase stream closed'),
       onError: (error) => print('Error in purchase stream: $error'),
@@ -213,6 +215,7 @@ class GoMarketMe {
     try {
       data['sdk_type'] = sdkType;
       data['sdk_version'] = sdkVersion;
+      data['package_name'] = _packageName;
       final response = await http.post(
         uri,
         headers: {"Content-Type": "application/json", "x-api-key": apiKey},
@@ -311,38 +314,22 @@ class GoMarketMe {
     };
   }
 
-  Future<List<String>> _fetchPurchases(
+  Future<void> _fetchConsolidatedPurchases(
       List<PurchaseDetails> purchaseDetailsList, String apiKey) async {
-    var productIds = <String>[];
     for (var purchase in purchaseDetailsList) {
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
-        await _sendEventToServer(
-            json.encode(_serializePurchaseDetails(purchase)),
-            'purchase',
-            apiKey);
-        if (purchase.productID.isNotEmpty &&
-            !productIds.contains(purchase.productID)) {
-          productIds.add(purchase.productID);
+        var data = _serializePurchaseDetails(purchase);
+        data['products'] = [];
+        if (purchase.productID.isNotEmpty) {
+          var productResponse = await InAppPurchase.instance
+              .queryProductDetails({purchase.productID});
+          for (var product in productResponse.productDetails) {
+            data['products'].add(_serializeProductDetails(product));
+          }
         }
+        await _sendEventToServer(json.encode(data), 'purchase', apiKey);
       }
-    }
-    return productIds;
-  }
-
-  Future<void> _fetchPurchaseProducts(
-      List<String> productIds, String apiKey) async {
-    var response =
-        await InAppPurchase.instance.queryProductDetails(productIds.toSet());
-    if (response.notFoundIDs.isNotEmpty) {
-      await _sendEventToServer(
-          json.encode({'notFoundIDs': response.notFoundIDs.join(',')}),
-          'product',
-          apiKey);
-    }
-    for (var product in response.productDetails) {
-      await _sendEventToServer(
-          json.encode(_serializeProductDetails(product)), 'product', apiKey);
     }
   }
 
@@ -376,6 +363,7 @@ class GoMarketMe {
 
   Map<String, dynamic> _serializePurchaseDetails(PurchaseDetails purchase) {
     return {
+      'packageName': _packageName,
       'productID': purchase.productID,
       'purchaseID': purchase.purchaseID ?? '',
       'transactionDate': purchase.transactionDate ?? '',
@@ -401,6 +389,7 @@ class GoMarketMe {
 
   Map<String, dynamic> _serializeProductDetails(ProductDetails product) {
     return {
+      'packageName': _packageName,
       'productID': product.id,
       'productTitle': product.title,
       'productDescription': product.description,

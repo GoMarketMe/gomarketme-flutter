@@ -28,3 +28,6 @@
 
 ## 2.0.1
 * Updated README
+
+## 2.0.2
+* Improved attribution
