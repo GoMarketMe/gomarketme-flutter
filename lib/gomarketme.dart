@@ -118,7 +118,7 @@ class SaleDistribution {
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
   static const String sdkType = 'Flutter';
-  static const String sdkVersion = '2.0.2';
+  static const String sdkVersion = '2.0.3';
   static const String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
   static const String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
   static const String sdkInitializationUrl =
@@ -130,13 +130,15 @@ class GoMarketMe {
   String _affiliateCampaignCode = '';
   String _deviceId = '';
   String _packageName = '';
+  GoMarketMeAffiliateMarketingData? _affiliateMarketingData;
+  GoMarketMeAffiliateMarketingData? get affiliateMarketingData =>
+      _affiliateMarketingData;
 
   factory GoMarketMe() => _instance;
 
   GoMarketMe._internal();
 
-  Future<GoMarketMeAffiliateMarketingData?> initialize(String apiKey) async {
-    GoMarketMeAffiliateMarketingData? output;
+  Future<void> initialize(String apiKey) async {
     try {
       bool isSDKInitialized = await _isSDKInitialized();
       if (!isSDKInitialized) {
@@ -144,12 +146,11 @@ class GoMarketMe {
       }
       _packageName = (await PackageInfo.fromPlatform()).packageName;
       var systemInfo = await _getSystemInfo();
-      output = await _postSystemInfo(systemInfo, apiKey);
+      _affiliateMarketingData = await _postSystemInfo(systemInfo, apiKey);
       await _addListener(apiKey);
     } catch (e) {
       print('Error initializing GoMarketMe: $e');
     }
-    return output;
   }
 
   Future<void> _addListener(String apiKey) async {

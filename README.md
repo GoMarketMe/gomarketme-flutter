@@ -19,7 +19,7 @@ This will add a line like this to your package's pubspec.yaml (and run an implic
 
 ```yaml
 dependencies:
-  gomarketme: ^2.0.2
+  gomarketme: ^2.0.3
 ```
 
 ---
@@ -37,9 +37,11 @@ GoMarketMeAffiliateMarketingData? goMarketMe;
 
 Future<void> main() async {
 
-  // returns null if the user if not coming from an affiliate
-  // returns the affiliate details and campaign information otherwise.
-  goMarketMe = await GoMarketMe().initialize('API_KEY');
+  final goMarketMeSDK = GoMarketMe();
+  await goMarketMeSDK.initialize('API_KEY');
+
+  // Access the optional affiliate marketing data after initialization
+  goMarketMe = goMarketMeSDK.affiliateMarketingData;
 
   runApp(const MyApp());
 }

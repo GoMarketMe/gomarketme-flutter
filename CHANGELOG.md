@@ -31,3 +31,6 @@
 
 ## 2.0.2
 * Improved attribution
+
+## 2.0.3
+* Improved attribution
