@@ -19,7 +19,7 @@ This will add a line like this to your package's pubspec.yaml (and run an implic
 
 ```yaml
 dependencies:
-  gomarketme: ^2.0.3
+  gomarketme: ^2.0.4
 ```
 
 ---
@@ -33,15 +33,9 @@ To initialize GoMarketMe, import the `gomarketme` package and create a new insta
 ```dart
 import 'package:gomarketme/gomarketme.dart';
 
-GoMarketMeAffiliateMarketingData? goMarketMe;
-
 Future<void> main() async {
 
-  final goMarketMeSDK = GoMarketMe();
-  await goMarketMeSDK.initialize('API_KEY');
-
-  // Access the optional affiliate marketing data after initialization
-  goMarketMe = goMarketMeSDK.affiliateMarketingData;
+  GoMarketMe().initialize('API_KEY'); // Initialize with your API key
 
   runApp(const MyApp());
 }
