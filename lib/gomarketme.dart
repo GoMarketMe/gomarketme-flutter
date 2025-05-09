@@ -118,7 +118,7 @@ class SaleDistribution {
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
   static const String sdkType = 'Flutter';
-  static const String sdkVersion = '2.0.4';
+  static const String sdkVersion = '2.0.5';
   static const String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
   static const String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
   static const String sdkInitializationUrl =
@@ -318,19 +318,16 @@ class GoMarketMe {
   Future<void> _fetchConsolidatedPurchases(
       List<PurchaseDetails> purchaseDetailsList, String apiKey) async {
     for (var purchase in purchaseDetailsList) {
-      if (purchase.status == PurchaseStatus.purchased ||
-          purchase.status == PurchaseStatus.restored) {
-        var data = _serializePurchaseDetails(purchase);
-        data['products'] = [];
-        if (purchase.productID.isNotEmpty) {
-          var productResponse = await InAppPurchase.instance
-              .queryProductDetails({purchase.productID});
-          for (var product in productResponse.productDetails) {
-            data['products'].add(_serializeProductDetails(product));
-          }
+      var data = _serializePurchaseDetails(purchase);
+      data['products'] = [];
+      if (purchase.productID.isNotEmpty) {
+        var productResponse = await InAppPurchase.instance
+            .queryProductDetails({purchase.productID});
+        for (var product in productResponse.productDetails) {
+          data['products'].add(_serializeProductDetails(product));
         }
-        await _sendEventToServer(json.encode(data), 'purchase', apiKey);
       }
+      await _sendEventToServer(json.encode(data), 'purchase', apiKey);
     }
   }
 
@@ -384,7 +381,8 @@ class GoMarketMe {
               'details': purchase.error!.details,
             }
           : {},
-      'hashCode': purchase.hashCode
+      'hashCode': purchase.hashCode,
+      'purchaseStatus': purchase.status.name
     };
   }
 

@@ -37,3 +37,6 @@
 
 ## 2.0.4
 * Improved attribution
+
+## 2.0.5
+* Improved reporting
