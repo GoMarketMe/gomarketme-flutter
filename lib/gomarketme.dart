@@ -118,7 +118,7 @@ class SaleDistribution {
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
   static const String sdkType = 'Flutter';
-  static const String sdkVersion = '2.0.5';
+  static const String sdkVersion = '2.0.6';
   static const String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
   static const String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
   static const String sdkInitializationUrl =
@@ -375,11 +375,7 @@ class GoMarketMe {
       },
       'pendingCompletePurchase': purchase.pendingCompletePurchase,
       'error': purchase.error != null
-          ? {
-              'code': purchase.error!.code,
-              'message': purchase.error!.message,
-              'details': purchase.error!.details,
-            }
+          ? {'code': purchase.error!.code, 'message': purchase.error!.message}
           : {},
       'hashCode': purchase.hashCode,
       'purchaseStatus': purchase.status.name

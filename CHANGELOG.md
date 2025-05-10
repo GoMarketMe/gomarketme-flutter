@@ -40,3 +40,6 @@
 
 ## 2.0.5
 * Improved reporting
+
+## 2.0.6
+* Improved reporting
