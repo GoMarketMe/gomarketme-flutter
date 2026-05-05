@@ -1,29 +1,47 @@
-# Build output
+# Build outputs
 /build/
-/ios/Flutter/Flutter.framework
+build/
+**/build/
 /android/.gradle/
 /android/app/build/
+/ios/Flutter/Flutter.framework
+**/ios/.generated/
 
-# Dart
+# Dart / Flutter
 .dart_tool/
+.packages
 /packages
 .pub/
-/.idea/
-/*.iml
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDE / editor
+.idea/
+.vscode/
 *.iml
+/*.iml
 *.ipr
 *.iws
 *.swp
-*.lock
-*.log
 
-# Flutter specific
-**/build/
-**/ios/.generated/
-.dart_tool/
-/.packages
-.flutter-plugins
-.flutter-plugins-dependencies
-.flutter-plugins-dependencies
+# Logs / locks
+*.log
+*.lock
+
+# macOS
+.DS_Store
+
+# Pivotal
 .pivotal
 .pivotal.*
+
+# iOS debug symbols, not needed at runtime
+ios/Frameworks/**/*.dSYM/
+ios/Frameworks/**/dSYMs/
+ios/Frameworks/**/BCSymbolMaps/
+
+# Local/generated archives
+*.zip
+*.tar.gz
+*.diff
+*.patch

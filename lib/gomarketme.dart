@@ -1,15 +1,5 @@
-library gomarketme;
-
-import 'dart:io';
-import 'dart:async';
-import 'dart:ui';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class GoMarketMeAffiliateMarketingData {
   final Campaign campaign;
@@ -19,7 +9,7 @@ class GoMarketMeAffiliateMarketingData {
   final String deviceId;
   final String? offerCode;
 
-  GoMarketMeAffiliateMarketingData({
+  const GoMarketMeAffiliateMarketingData({
     required this.campaign,
     required this.affiliate,
     required this.saleDistribution,
@@ -28,15 +18,34 @@ class GoMarketMeAffiliateMarketingData {
     this.offerCode,
   });
 
-  factory GoMarketMeAffiliateMarketingData.fromJson(Map<String, dynamic> json) {
+  static GoMarketMeAffiliateMarketingData? fromJson(
+    Map<String, dynamic>? json,
+  ) {
+    if (json == null || json.isEmpty) {
+      return null;
+    }
+
     return GoMarketMeAffiliateMarketingData(
-      campaign: Campaign.fromJson(json['campaign']),
-      affiliate: Affiliate.fromJson(json['affiliate']),
-      saleDistribution: SaleDistribution.fromJson(json['sale_distribution']),
-      affiliateCampaignCode: json['affiliate_campaign_code'] ?? '',
-      deviceId: json['device_id'] ?? '',
-      offerCode: json['offer_code'],
+      campaign: Campaign.fromJson(_asMap(json['campaign'])),
+      affiliate: Affiliate.fromJson(_asMap(json['affiliate'])),
+      saleDistribution: SaleDistribution.fromJson(
+        _asMap(json['sale_distribution']),
+      ),
+      affiliateCampaignCode: _asString(json['affiliate_campaign_code']),
+      deviceId: _asString(json['device_id']),
+      offerCode: json['offer_code']?.toString(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'campaign': campaign.toJson(),
+      'affiliate': affiliate.toJson(),
+      'sale_distribution': saleDistribution.toJson(),
+      'affiliate_campaign_code': affiliateCampaignCode,
+      'device_id': deviceId,
+      'offer_code': offerCode,
+    };
   }
 }
 
@@ -47,7 +56,7 @@ class Campaign {
   final String type;
   final String? publicLinkUrl;
 
-  Campaign({
+  const Campaign({
     required this.id,
     required this.name,
     required this.status,
@@ -57,12 +66,22 @@ class Campaign {
 
   factory Campaign.fromJson(Map<String, dynamic> json) {
     return Campaign(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      status: json['status'] ?? '',
-      type: json['type'] ?? '',
-      publicLinkUrl: json['public_link_url'],
+      id: _asString(json['id']),
+      name: _asString(json['name']),
+      status: _asString(json['status']),
+      type: _asString(json['type']),
+      publicLinkUrl: json['public_link_url']?.toString(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'name': name,
+      'status': status,
+      'type': type,
+      'public_link_url': publicLinkUrl,
+    };
   }
 }
 
@@ -75,7 +94,7 @@ class Affiliate {
   final String tiktokAccount;
   final String xAccount;
 
-  Affiliate({
+  const Affiliate({
     required this.id,
     required this.firstName,
     required this.lastName,
@@ -87,14 +106,26 @@ class Affiliate {
 
   factory Affiliate.fromJson(Map<String, dynamic> json) {
     return Affiliate(
-      id: json['id'] ?? '',
-      firstName: json['first_name'] ?? '',
-      lastName: json['last_name'] ?? '',
-      countryCode: json['country_code'] ?? '',
-      instagramAccount: json['instagram_account'] ?? '',
-      tiktokAccount: json['tiktok_account'] ?? '',
-      xAccount: json['x_account'] ?? '',
+      id: _asString(json['id']),
+      firstName: _asString(json['first_name']),
+      lastName: _asString(json['last_name']),
+      countryCode: _asString(json['country_code']),
+      instagramAccount: _asString(json['instagram_account']),
+      tiktokAccount: _asString(json['tiktok_account']),
+      xAccount: _asString(json['x_account']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'first_name': firstName,
+      'last_name': lastName,
+      'country_code': countryCode,
+      'instagram_account': instagramAccount,
+      'tiktok_account': tiktokAccount,
+      'x_account': xAccount,
+    };
   }
 }
 
@@ -102,318 +133,111 @@ class SaleDistribution {
   final String platformPercentage;
   final String affiliatePercentage;
 
-  SaleDistribution({
+  const SaleDistribution({
     required this.platformPercentage,
     required this.affiliatePercentage,
   });
 
   factory SaleDistribution.fromJson(Map<String, dynamic> json) {
     return SaleDistribution(
-      platformPercentage: json['platform_percentage'] ?? '',
-      affiliatePercentage: json['affiliate_percentage'] ?? '',
+      platformPercentage: _asString(json['platform_percentage']),
+      affiliatePercentage: _asString(json['affiliate_percentage']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'platform_percentage': platformPercentage,
+      'affiliate_percentage': affiliatePercentage,
+    };
   }
 }
 
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
-  static const String sdkType = 'Flutter';
-  static const String sdkVersion = '2.0.6';
-  static const String sdkInitializedKey = 'GOMARKETME_SDK_INITIALIZED';
-  static const String sdkAndroidIdKey = 'GOMARKETME_ANDROID_ID';
-  static const String sdkInitializationUrl =
-      'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/sdk-initialization';
-  static const String systemInfoUrl =
-      'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/mobile/system-info';
-  static const String eventUrl =
-      'https://4v9008q1a5.execute-api.us-west-2.amazonaws.com/prod/v1/event';
-  String _affiliateCampaignCode = '';
-  String _deviceId = '';
-  String _packageName = '';
+  static const MethodChannel _methodChannel = MethodChannel(
+    'co.gomarketme/core',
+  );
+
+  static const String _sdkType = 'Flutter';
+  static const String _sdkVersion = '5.0.0';
+
+  bool _isInitializing = false;
+  bool _isInitialized = false;
   GoMarketMeAffiliateMarketingData? _affiliateMarketingData;
-  GoMarketMeAffiliateMarketingData? get affiliateMarketingData =>
-      _affiliateMarketingData;
 
   factory GoMarketMe() => _instance;
 
   GoMarketMe._internal();
 
+  bool get isInitialized => _isInitialized;
+
+  GoMarketMeAffiliateMarketingData? get affiliateMarketingData =>
+      _affiliateMarketingData;
+
   Future<void> initialize(String apiKey) async {
-    try {
-      bool isSDKInitialized = await _isSDKInitialized();
-      if (!isSDKInitialized) {
-        await _postSDKInitialization(apiKey);
-      }
-      _packageName = (await PackageInfo.fromPlatform()).packageName;
-      var systemInfo = await _getSystemInfo();
-      _affiliateMarketingData = await _postSystemInfo(systemInfo, apiKey);
-      await _addListener(apiKey);
-    } catch (e) {
-      print('Error initializing GoMarketMe: $e');
-    }
-  }
+    final trimmedApiKey = apiKey.trim();
 
-  Future<void> _addListener(String apiKey) async {
-    InAppPurchase.instance.purchaseStream.listen(
-      (purchaseDetailsList) async {
-        await _fetchConsolidatedPurchases(purchaseDetailsList, apiKey);
-      },
-      onDone: () => print('Purchase stream closed'),
-      onError: (error) => print('Error in purchase stream: $error'),
-    );
-  }
-
-  Future<Map<String, dynamic>> _getSystemInfo() async {
-    final deviceInfoPlugin = DeviceInfoPlugin();
-    var deviceData = <String, dynamic>{};
-    try {
-      if (Platform.isAndroid) {
-        _deviceId = await _getAndroidId();
-        deviceData = _readAndroidBuildData(
-            await deviceInfoPlugin.androidInfo, _deviceId);
-      } else if (Platform.isIOS) {
-        deviceData = _readIosDeviceInfo(await deviceInfoPlugin.iosInfo);
-        _deviceId = deviceData['identifierForVendor'];
-      }
-    } catch (e) {
-      print('Failed to get platform version: $e');
+    if (trimmedApiKey.isEmpty) {
+      _log('Initialization skipped because apiKey is empty.');
+      return;
     }
 
-    final windowData = {
-      'devicePixelRatio': window.devicePixelRatio,
-      'width': window.physicalSize.width,
-      'height': window.physicalSize.height
-    };
-
-    return {
-      'device_info': deviceData,
-      'window_info': windowData,
-      'time_zone_code': DateTime.now().timeZoneName,
-      'language_code': Platform.localeName
-    };
-  }
-
-  Future<void> _postSDKInitialization(String apiKey) async {
-    final uri = Uri.parse(sdkInitializationUrl);
-    try {
-      final response = await http.post(uri,
-          headers: {"Content-Type": "application/json", "x-api-key": apiKey});
-      if (response.statusCode == 200) {
-        _markSDKAsInitialized();
-      } else {
-        print(
-            'Failed to mark SDK as Initialized. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error sending SDK information to server: $e');
-    }
-  }
-
-  Future<GoMarketMeAffiliateMarketingData?> _postSystemInfo(
-      Map<String, dynamic> data, String apiKey) async {
-    GoMarketMeAffiliateMarketingData? output;
-    final uri = Uri.parse(systemInfoUrl);
-    try {
-      data['sdk_type'] = sdkType;
-      data['sdk_version'] = sdkVersion;
-      data['package_name'] = _packageName;
-      final response = await http.post(
-        uri,
-        headers: {"Content-Type": "application/json", "x-api-key": apiKey},
-        body: json.encode(data),
+    if (_isInitialized || _isInitializing) {
+      _log(
+        'Initialization skipped because SDK is already initialized or initializing.',
       );
-      if (response.statusCode == 200) {
-        print('System Info sent successfully');
-        output = GoMarketMeAffiliateMarketingData.fromJson(
-            json.decode(response.body));
-        _affiliateCampaignCode = output.affiliateCampaignCode;
-      } else {
-        print(
-            'Failed to send system info. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error sending system info to server: $e');
-    }
-    return output;
-  }
-
-  String _generateAndroidId() {
-    const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    final random = Random();
-
-    String getRandomString(int length) {
-      return List.generate(
-              length, (index) => characters[random.nextInt(characters.length)])
-          .join();
+      return;
     }
 
-    final part1 = getRandomString(4);
-    final part2 = getRandomString(6);
-    final part3 = getRandomString(3);
+    _isInitializing = true;
 
-    return '$part1.$part2.$part3';
-  }
-
-  Future<String> _getAndroidId() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? androidId = prefs.getString(sdkAndroidIdKey);
-
-    if (androidId != null) {
-      return androidId;
-    } else {
-      androidId = _generateAndroidId();
-      await prefs.setString(sdkAndroidIdKey, androidId);
-
-      return androidId;
-    }
-  }
-
-  static Map<String, dynamic> _readAndroidBuildData(
-      AndroidDeviceInfo build, String androidId) {
-    return <String, dynamic>{
-      'androidId': androidId,
-      'board': build.board,
-      'bootloader': build.bootloader,
-      'brand': build.brand,
-      'device': build.device,
-      'display': build.display,
-      'fingerprint': build.fingerprint,
-      'hardware': build.hardware,
-      'host': build.host,
-      'id': build.id,
-      'isPhysicalDevice': build.isPhysicalDevice,
-      'manufacturer': build.manufacturer,
-      'model': build.model,
-      'product': build.product,
-      'tags': build.tags,
-      'type': build.type,
-      'version.baseOS': build.version.baseOS,
-      'version.codename': build.version.codename,
-      'version.incremental': build.version.incremental,
-      'version.previewSdkInt': build.version.previewSdkInt,
-      'version.release': build.version.release,
-      'version.sdkInt': build.version.sdkInt,
-      'version.securityPatch': build.version.securityPatch
-    };
-  }
-
-  static Map<String, dynamic> _readIosDeviceInfo(IosDeviceInfo data) {
-    return <String, dynamic>{
-      'identifierForVendor': data.identifierForVendor,
-      'isPhysicalDevice': data.isPhysicalDevice,
-      'localizedModel': data.localizedModel,
-      'model': data.model,
-      'name': data.name,
-      'systemName': data.systemName,
-      'systemVersion': data.systemVersion,
-      'utsname_machine': data.utsname.machine,
-      'utsname_nodename': data.utsname.nodename,
-      'utsname_release': data.utsname.release,
-      'utsname_sysname': data.utsname.sysname,
-      'utsname_version': data.utsname.version,
-    };
-  }
-
-  Future<void> _fetchConsolidatedPurchases(
-      List<PurchaseDetails> purchaseDetailsList, String apiKey) async {
-    for (var purchase in purchaseDetailsList) {
-      var data = _serializePurchaseDetails(purchase);
-      data['products'] = [];
-      if (purchase.productID.isNotEmpty) {
-        var productResponse = await InAppPurchase.instance
-            .queryProductDetails({purchase.productID});
-        for (var product in productResponse.productDetails) {
-          data['products'].add(_serializeProductDetails(product));
-        }
-      }
-      await _sendEventToServer(json.encode(data), 'purchase', apiKey);
-    }
-  }
-
-  Future<void> _sendEventToServer(
-      String body, String eventType, String apiKey) async {
-    final uri = Uri.parse(eventUrl);
     try {
-      var response = await http.post(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "x-affiliate-campaign-code": _affiliateCampaignCode,
-          "x-device-id": _deviceId,
-          "x-event-type": eventType,
-          "x-product-type": Platform.operatingSystem,
-          "x-source-name": Platform.isAndroid ? 'google_play' : 'app_store',
-          "x-api-key": apiKey
-        },
-        body: body,
-      );
-      if (response.statusCode == 200) {
-        print('${eventType} sent successfully');
-      } else {
-        print(
-            'Failed to send ${eventType}. Status code: ${response.statusCode}');
+      final result = await _methodChannel
+          .invokeMethod<dynamic>('initialize', <String, dynamic>{
+            'apiKey': trimmedApiKey,
+            'sdkType': _sdkType,
+            'sdkVersion': _sdkVersion,
+            'isProduction': kReleaseMode,
+          });
+
+      if (result is Map) {
+        final resultMap = result.map<String, dynamic>(
+          (dynamic key, dynamic value) => MapEntry(key.toString(), value),
+        );
+        _affiliateMarketingData = GoMarketMeAffiliateMarketingData.fromJson(
+          _asMap(resultMap['affiliateMarketingData']),
+        );
       }
-    } catch (e) {
-      print('Error sending ${eventType} to server: $e');
+
+      _isInitialized = true;
+    } catch (error, stackTrace) {
+      _log('Error initializing GoMarketMe: $error');
+      _log(stackTrace.toString());
+    } finally {
+      _isInitializing = false;
     }
   }
 
-  Map<String, dynamic> _serializePurchaseDetails(PurchaseDetails purchase) {
-    return {
-      'packageName': _packageName,
-      'productID': purchase.productID,
-      'purchaseID': purchase.purchaseID ?? '',
-      'transactionDate': purchase.transactionDate ?? '',
-      'status': purchase.status.index, // Enum to index
-      'verificationData': {
-        'localVerificationData':
-            purchase.verificationData.localVerificationData,
-        'serverVerificationData':
-            purchase.verificationData.serverVerificationData,
-        'source': purchase.verificationData.source,
-      },
-      'pendingCompletePurchase': purchase.pendingCompletePurchase,
-      'error': purchase.error != null
-          ? {'code': purchase.error!.code, 'message': purchase.error!.message}
-          : {},
-      'hashCode': purchase.hashCode,
-      'purchaseStatus': purchase.status.name
-    };
-  }
-
-  Map<String, dynamic> _serializeProductDetails(ProductDetails product) {
-    return {
-      'packageName': _packageName,
-      'productID': product.id,
-      'productTitle': product.title,
-      'productDescription': product.description,
-      'productPrice': product.price,
-      'productRawPrice': product.rawPrice,
-      'productCurrencyCode': product.currencyCode,
-      'productCurrencySymbol': product.currencySymbol,
-      'hashCode': product.hashCode
-    };
-  }
-
-  Future<bool> _markSDKAsInitialized() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      bool result = await prefs.setBool(sdkInitializedKey, true);
-      return result;
-    } catch (e) {
-      print('Failed to save SDK initialization: $e');
-      return false;
-    }
-  }
-
-  Future<bool> _isSDKInitialized() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return await prefs.getBool(sdkInitializedKey)!;
-    } catch (e) {
-      print('Failed to load SDK initialization: $e');
-      return false;
+  static void _log(String message) {
+    if (kDebugMode) {
+      debugPrint('[GoMarketMe] $message');
     }
   }
 }
+
+Map<String, dynamic> _asMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+
+  if (value is Map) {
+    return value.map(
+      (dynamic key, dynamic mapValue) => MapEntry(key.toString(), mapValue),
+    );
+  }
+
+  return <String, dynamic>{};
+}
+
+String _asString(dynamic value) => value?.toString() ?? '';
