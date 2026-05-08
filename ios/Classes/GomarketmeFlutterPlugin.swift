@@ -4,6 +4,7 @@ import StoreKit
 import GoMarketMeAppleCoreKit
 
 public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
+    public static let isDebugLoggingEnabled = false
     private var core: GoMarketMeAppleCore?
 
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -68,11 +69,14 @@ public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
         )
 
         let appleCore = core ?? GoMarketMeAppleCore()
-        appleCore.onPurchase = { event in
-            debugPrint("[GoMarketMe Flutter iOS] purchase observed by core: \(event.toDictionary())")
-        }
-        appleCore.onError = { error in
-            debugPrint("[GoMarketMe Flutter iOS] core error: \(error.localizedDescription)")
+        
+        if Self.isDebugLoggingEnabled {
+            appleCore.onPurchase = { event in
+                debugPrint("[GoMarketMe Flutter iOS] purchase observed by core: \(event.toDictionary())")
+            }
+            appleCore.onError = { error in
+                debugPrint("[GoMarketMe Flutter iOS] core error: \(error.localizedDescription)")
+            }
         }
 
         Task {

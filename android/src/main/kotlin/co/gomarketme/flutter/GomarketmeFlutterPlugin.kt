@@ -52,8 +52,11 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         )
 
         val googleCore = core ?: GoMarketMeGoogleCore(context)
-        googleCore.onPurchase = { event -> Log.d(TAG, "purchase observed by core: ${event.toMap()}") }
-        googleCore.onError = { throwable -> Log.e(TAG, "core error", throwable) }
+
+        if (isDebugLoggingEnabled) {
+            googleCore.onPurchase = { event -> Log.d(TAG, "purchase observed by core: ${event.toMap()}") }
+            googleCore.onError = { throwable -> Log.e(TAG, "core error", throwable) }
+        }
 
         scope.launch {
             try {
@@ -80,6 +83,7 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     }
 
     private companion object {
+        const val isDebugLoggingEnabled = false
         const val CHANNEL_NAME = "co.gomarketme/core"
         const val TAG = "GoMarketMeFlutter"
     }

@@ -1,5 +1,5 @@
 group = 'co.gomarketme.flutter'
-version = '5.0.0'
+version = '5.0.1'
 
 buildscript {
     ext.kotlin_version = '2.1.0'

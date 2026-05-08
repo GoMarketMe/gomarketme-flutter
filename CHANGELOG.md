@@ -46,3 +46,6 @@
 
 ## 5.0.0
 * Improved reporting
+
+## 5.0.1
+* Improved reporting

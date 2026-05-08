@@ -1,7 +1,7 @@
 <div align="center">
 	<img src="https://static.gomarketme.net/assets/gmm-icon.png" alt="GoMarketMe"/>
 	<br>
-    <h1>gomarketme</h1>
+    <h1>GoMarketMe Flutter SDK</h1>
 	<p>Affiliate marketing for Flutter apps on iOS and Android.</p>
 </div>
 
@@ -19,7 +19,7 @@ This will add a line like this to your app's `pubspec.yaml` and run an implicit 
 
 ```yaml
 dependencies:
-  gomarketme: ^5.0.0
+  gomarketme: ^5.0.1
 ```
 
 ## Usage

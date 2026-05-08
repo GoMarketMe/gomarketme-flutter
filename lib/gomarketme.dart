@@ -160,7 +160,7 @@ class GoMarketMe {
   );
 
   static const String _sdkType = 'Flutter';
-  static const String _sdkVersion = '5.0.0';
+  static const String _sdkVersion = '5.0.1';
 
   bool _isInitializing = false;
   bool _isInitialized = false;
