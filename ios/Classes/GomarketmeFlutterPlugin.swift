@@ -21,8 +21,49 @@ public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
         switch call.method {
         case "initialize":
             handleInitialize(call, result: result)
+        case "syncAllTransactions":
+            handleSyncAllTransactions(result: result)
         default:
             result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func handleSyncAllTransactions(result: @escaping FlutterResult) {
+        guard #available(iOS 15.0, *) else {
+            result(
+                FlutterError(
+                    code: "unsupported_ios",
+                    message: "GoMarketMe transaction sync requires iOS 15.0+",
+                    details: nil
+                )
+            )
+            return
+        }
+
+        guard let appleCore = core else {
+            result(
+                FlutterError(
+                    code: "not_initialized",
+                    message: "GoMarketMe SDK must be initialized before syncing transactions",
+                    details: nil
+                )
+            )
+            return
+        }
+
+        Task {
+            let syncResult = await appleCore.syncAllTransactions()
+
+            let response: [String: Any] = [
+                "fetchedCount": syncResult.fetchedCount,
+                "sentCount": syncResult.sentCount,
+                "failedCount": syncResult.failedCount,
+                "success": syncResult.success
+            ]
+
+            DispatchQueue.main.async {
+                result(response)
+            }
         }
     }
 

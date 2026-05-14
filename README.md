@@ -1,8 +1,8 @@
 <div align="center">
-	<img src="https://static.gomarketme.net/assets/gmm-icon.png" alt="GoMarketMe"/>
-	<br>
-    <h1>GoMarketMe Flutter SDK</h1>
-	<p>Affiliate marketing for Flutter apps on iOS and Android.</p>
+  <img src="https://static.gomarketme.net/assets/gmm-icon.png" alt="GoMarketMe" />
+  <br />
+  <h1>GoMarketMe Flutter SDK</h1>
+  <p>Affiliate marketing for Flutter apps on iOS and Android.</p>
 </div>
 
 [![License: MIT][license_badge]][license_link]
@@ -19,75 +19,130 @@ This will add a line like this to your app's `pubspec.yaml` and run an implicit 
 
 ```yaml
 dependencies:
-  gomarketme: ^5.0.2
+  gomarketme: ^5.0.3
 ```
 
 ## Usage
 
-### ⚙️ Basic Integration
+GoMarketMe takes only a few lines to set up.
 
-To initialize GoMarketMe, import the `gomarketme` package and initialize the SDK with your API key:
+### Step 1/3: Initialize
+
+Import `gomarketme` and initialize the SDK with your GoMarketMe API key.
 
 ```dart
 import 'package:flutter/widgets.dart';
 import 'package:gomarketme/gomarketme.dart';
 
+final goMarketMeSDK = GoMarketMe();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  GoMarketMe().initialize('API_KEY'); // Initialize with your API key
+  goMarketMeSDK.initialize('API_KEY');
 
   runApp(const MyApp());
 }
 ```
 
-No further steps needed. The SDK automatically attributes and reports your affiliate sales in real time.
+Replace `API_KEY` with your actual GoMarketMe API key. You can find it on the product onboarding page and under **Profile > API Key**.
 
-### ⚙️ OR - Advanced Integration ([Programmatic Affiliate Marketing](https://gomarketme.co/programmatic-affiliate-marketing/))
+### Alternative Step 1/3: Programmatic Affiliate Marketing
 
-Use this approach for more advanced scenarios, such as:
+For apps that want to customize the user experience based on affiliate attribution, initialize GoMarketMe and read affiliate marketing data after initialization.
 
-- Affiliate-aware paywalls: Offer exclusive pricing or promotions to users acquired through affiliate campaigns.
-- Personalized onboarding: For example, a social or fitness app can automatically make new users follow the influencer who referred them, strengthening engagement and maximizing the affiliate's impact.
+This enables [Programmatic Affiliate Marketing](https://gomarketme.co/programmatic-affiliate-marketing/), including affiliate-aware paywalls, personalized onboarding, promotions, and custom in-app experiences.
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:gomarketme/gomarketme.dart';
 
 final goMarketMeSDK = GoMarketMe();
-
 GoMarketMeAffiliateMarketingData? affiliateData;
 
-void _initializeGoMarketMe(String apiKey) async {
+Future<void> initializeGoMarketMe(String apiKey) async {
   await goMarketMeSDK.initialize(apiKey);
 
-  affiliateData = goMarketMeSDK.affiliateMarketingData;
+  final data = goMarketMeSDK.affiliateMarketingData;
 
-  if (affiliateData != null) {
-    debugPrint('Affiliate ID: ${affiliateData?.affiliate.id}');
-    debugPrint(
-      'Affiliate %: ${affiliateData?.saleDistribution.affiliatePercentage}',
-    );
-    debugPrint('Campaign ID: ${affiliateData?.campaign.id}');
-  } else {
+  if (data == null) {
     debugPrint('No GoMarketMe affiliate data found.');
+    return;
   }
+
+  // Maps to GoMarketMe > Affiliates > Export > id column.
+  debugPrint('Affiliate ID: ${data.affiliate.id}');
+
+  // Maps to GoMarketMe > Campaigns > [Name] > Affiliate\'s Revenue Split (%).
+  debugPrint('Affiliate %: ${data.saleDistribution.affiliatePercentage}');
+
+  // Maps to GoMarketMe > Campaigns > [Name] > id in the URL.
+  debugPrint('Campaign ID: ${data.campaign.id}');
+
+  // Use this data to customize onboarding, paywalls, promotions, or in-app experiences.
+  affiliateData = data;
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  _initializeGoMarketMe('API_KEY'); // Initialize with your API key
+  await initializeGoMarketMe('API_KEY');
 
   runApp(const MyApp());
 }
 ```
 
-Make sure to replace `API_KEY` with your actual GoMarketMe API key. You can find it on the product onboarding page and under **Profile > API Key**.
+### Step 2/3: Sync after purchase
+
+After your app completes a purchase through `in_app_purchase`, RevenueCat, Adapty, or another in-app purchase provider, call:
+
+```dart
+await goMarketMeSDK.syncAllTransactions();
+```
+
+If your purchase library lets you decide when to finish, acknowledge, consume, or complete the transaction, call `syncAllTransactions()` first.
+
+```dart
+final purchaseParam = PurchaseParam(productDetails: productDetails);
+await InAppPurchase.instance.buyConsumable(purchaseParam: purchaseParam);
+
+// After you receive a successful purchase update:
+await goMarketMeSDK.syncAllTransactions();
+await InAppPurchase.instance.completePurchase(purchaseDetails);
+```
+
+### Step 3/3: iOS consumables only
+
+If your iOS app sells consumable in-app purchases, add this key to your app's `ios/Runner/Info.plist`:
+
+```xml
+<key>SKIncludeConsumableInAppPurchaseHistory</key>
+<true/>
+```
+
+That's it. GoMarketMe automatically attributes and reports affiliate sales.
+
+## Platform Support
+
+| Platform | Support | Notes |
+|---|---:|---|
+| iOS | ✅ | StoreKit 2, requires iOS 15+ |
+| Android | ✅ | Google Play Billing v8.0.0+ |
+| Flutter | ✅ | Full support on iOS and Android |
+
+## IAP Provider Compatibility
+
+| Provider | Support | Notes |
+|---|---:|---|
+| in_app_purchase | ✅ | Full support |
+| RevenueCat | ✅ | Supports Apple and Google IAPs |
+| Adapty | ✅ | Supports Apple and Google IAPs |
+
+GoMarketMe works alongside `in_app_purchase`, RevenueCat, Adapty, and other IAP providers.
 
 ## Support
 
-If you run into any issues, please reach out to us at [integrations@gomarketme.co](mailto:integrations@gomarketme.co) or visit [https://gomarketme.co](https://gomarketme.co).
+For integration support, contact [integrations@gomarketme.co](mailto:integrations@gomarketme.co) or visit [https://gomarketme.co](https://gomarketme.co).
 
 [license_badge]: https://img.shields.io/badge/license-MIT-blue.svg
 [license_link]: https://opensource.org/licenses/MIT

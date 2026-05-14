@@ -33,7 +33,38 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "initialize" -> initialize(call, result)
+            "syncAllTransactions" -> syncAllTransactions(result)
             else -> result.notImplemented()
+        }
+    }
+
+    private fun syncAllTransactions(result: MethodChannel.Result) {
+        val googleCore = core
+
+        if (googleCore == null) {
+            result.error(
+                "not_initialized",
+                "GoMarketMe SDK must be initialized before syncing transactions",
+                null
+            )
+            return
+        }
+
+        scope.launch {
+            try {
+                val syncResult = googleCore.sendCurrentPurchasesWithResult()
+
+                result.success(
+                    mapOf(
+                        "fetchedCount" to syncResult.fetchedCount,
+                        "sentCount" to syncResult.sentCount,
+                        "failedCount" to syncResult.failedCount,
+                        "success" to syncResult.success
+                    )
+                )
+            } catch (throwable: Throwable) {
+                result.error("sync_all_transactions_failed", throwable.message, null)
+            }
         }
     }
 

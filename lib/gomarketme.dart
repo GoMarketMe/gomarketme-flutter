@@ -153,6 +153,38 @@ class SaleDistribution {
   }
 }
 
+class GoMarketMeTransactionSyncResult {
+  final int fetchedCount;
+  final int sentCount;
+  final int failedCount;
+  final bool success;
+
+  const GoMarketMeTransactionSyncResult({
+    required this.fetchedCount,
+    required this.sentCount,
+    required this.failedCount,
+    required this.success,
+  });
+
+  factory GoMarketMeTransactionSyncResult.fromJson(Map<String, dynamic> json) {
+    return GoMarketMeTransactionSyncResult(
+      fetchedCount: _asInt(json['fetchedCount']),
+      sentCount: _asInt(json['sentCount']),
+      failedCount: _asInt(json['failedCount']),
+      success: _asBool(json['success']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'fetchedCount': fetchedCount,
+      'sentCount': sentCount,
+      'failedCount': failedCount,
+      'success': success,
+    };
+  }
+}
+
 class GoMarketMe {
   static final GoMarketMe _instance = GoMarketMe._internal();
   static const MethodChannel _methodChannel = MethodChannel(
@@ -160,7 +192,7 @@ class GoMarketMe {
   );
 
   static const String _sdkType = 'Flutter';
-  static const String _sdkVersion = '5.0.2';
+  static const String _sdkVersion = '5.0.3';
 
   bool _isInitializing = false;
   bool _isInitialized = false;
@@ -219,6 +251,20 @@ class GoMarketMe {
     }
   }
 
+  Future<GoMarketMeTransactionSyncResult> syncAllTransactions() async {
+    if (!_isInitialized) {
+      throw StateError(
+        'GoMarketMe SDK must be initialized before syncing transactions.',
+      );
+    }
+
+    final result = await _methodChannel.invokeMethod<dynamic>(
+      'syncAllTransactions',
+    );
+
+    return GoMarketMeTransactionSyncResult.fromJson(_asMap(result));
+  }
+
   static void _log(String message) {
     if (kDebugMode) {
       debugPrint('[GoMarketMe] $message');
@@ -238,6 +284,26 @@ Map<String, dynamic> _asMap(dynamic value) {
   }
 
   return <String, dynamic>{};
+}
+
+int _asInt(dynamic value) {
+  if (value is int) {
+    return value;
+  }
+
+  if (value is num) {
+    return value.toInt();
+  }
+
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+bool _asBool(dynamic value) {
+  if (value is bool) {
+    return value;
+  }
+
+  return value?.toString().toLowerCase() == 'true';
 }
 
 String _asString(dynamic value) => value?.toString() ?? '';
