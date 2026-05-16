@@ -19,7 +19,7 @@ This will add a line like this to your app's `pubspec.yaml` and run an implicit 
 
 ```yaml
 dependencies:
-  gomarketme: ^5.0.3
+  gomarketme: ^5.0.4
 ```
 
 ## Usage
@@ -45,7 +45,7 @@ Future<void> main() async {
 }
 ```
 
-Replace `API_KEY` with your actual GoMarketMe API key. You can find it on the product onboarding page and under **Profile > API Key**.
+Replace `API_KEY` with your actual GoMarketMe API key. You can find it during onboarding or in **Profile > [API Key](https://gomarketme.net/marketer/profile/#account-settings)**.
 
 ### Alternative Step 1/3: Programmatic Affiliate Marketing
 

@@ -55,3 +55,6 @@
 
 ## 5.0.3
 * Improved reporting
+
+## 5.0.4
+* Improved reporting
