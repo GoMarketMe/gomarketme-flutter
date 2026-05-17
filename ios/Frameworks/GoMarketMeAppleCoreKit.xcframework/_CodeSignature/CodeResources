@@ -6,7 +6,7 @@
 	<dict>
 		<key>ios-arm64/GoMarketMeAppleCoreKit.framework/GoMarketMeAppleCoreKit</key>
 		<data>
-		PFr91myEuu5Ri7wMittyS/fKFPE=
+		4RSvSuROU8HNPrYQqjLovOJNfj8=
 		</data>
 		<key>ios-arm64/GoMarketMeAppleCoreKit.framework/Info.plist</key>
 		<data>
@@ -74,7 +74,7 @@
 		</data>
 		<key>ios-arm64_x86_64-maccatalyst/GoMarketMeAppleCoreKit.framework/Versions/A/GoMarketMeAppleCoreKit</key>
 		<data>
-		ti0QGmBgXWzPcsZw2p6bz0hmqgQ=
+		yk0eqr8LKskSlAoxS09VRBKk4+4=
 		</data>
 		<key>ios-arm64_x86_64-maccatalyst/GoMarketMeAppleCoreKit.framework/Versions/A/Resources/Info.plist</key>
 		<data>
@@ -82,7 +82,7 @@
 		</data>
 		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/GoMarketMeAppleCoreKit</key>
 		<data>
-		k41cceKhEXt2xJSrOcroWNWqEKg=
+		LSOKPPgd3BxFMcZNj3CYOKXCywA=
 		</data>
 		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/Info.plist</key>
 		<data>
@@ -128,9 +128,21 @@
 		<data>
 		BH9/4V207MlEWxsBswSDQtUJcVw=
 		</data>
+		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeDirectory</key>
+		<data>
+		jg4cHfHsyAomoxfaKEB/3i1DXwM=
+		</data>
+		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeRequirements</key>
+		<data>
+		OnX22wWFKRSOFN1+obRynMCeyXM=
+		</data>
 		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeResources</key>
 		<data>
 		dUmeZqEtMYc/Tcp4e7QDRmbSSyE=
+		</data>
+		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeSignature</key>
+		<data>
+		2jmj7l5rSw0yVb/vlWAYkK/YBwk=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -139,7 +151,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			UNtouTVgexTIU0fd7+MePY8ays1MrS2ZyKiANN/e+vM=
+			C04IHXiePZkd1CrT9EUesjgEFXP3rNBlpZlxqVsCvO4=
 			</data>
 		</dict>
 		<key>ios-arm64/GoMarketMeAppleCoreKit.framework/Info.plist</key>
@@ -268,7 +280,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			tIWUjHICLO5CvQo943PnDsupiFdej7AnHWZe6cNzhO0=
+			m/kb5uQXG42fNEdoWiyP6Q5I7pVF5SYriLIVh/ZNu/c=
 			</data>
 		</dict>
 		<key>ios-arm64_x86_64-maccatalyst/GoMarketMeAppleCoreKit.framework/Versions/A/Resources/Info.plist</key>
@@ -287,7 +299,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			TBbCpHy03DZ6Z3E3roJj6AYdgfDhrS8r4FG1qmshnOM=
+			pK/XLdOOrB4b63BOnRp/68MmThblgB9VftRT53tv9rg=
 			</data>
 		</dict>
 		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/Info.plist</key>
@@ -367,11 +379,32 @@
 			se2xidXXkqmC5ATKH250NvlPBZQ8DpPS7X2MfNqfhX4=
 			</data>
 		</dict>
+		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeDirectory</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			oQiumvDoFJB0+ejjbSsK/nPIFkA9f99NMDz32FTDM/I=
+			</data>
+		</dict>
+		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeRequirements</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			mHkgkE6rZQ51eIwFSqCwUk5qgL/HGqMt+NI3phdD+YY=
+			</data>
+		</dict>
 		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeResources</key>
 		<dict>
 			<key>hash2</key>
 			<data>
 			bkezG2sQLDIdg+tKLph+8sfHzJ3iuu6unUn4F51kKHg=
+			</data>
+		</dict>
+		<key>ios-arm64_x86_64-simulator/GoMarketMeAppleCoreKit.framework/_CodeSignature/CodeSignature</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=
 			</data>
 		</dict>
 	</dict>

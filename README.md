@@ -19,7 +19,7 @@ This will add a line like this to your app's `pubspec.yaml` and run an implicit 
 
 ```yaml
 dependencies:
-  gomarketme: ^5.0.4
+  gomarketme: ^5.0.5
 ```
 
 ## Usage
