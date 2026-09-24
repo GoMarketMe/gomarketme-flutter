@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'gomarketme'
-  s.version          = '5.0.5'
+  s.version          = '6.0.0'
   s.summary          = 'GoMarketMe Flutter SDK.'
   s.description      = 'GoMarketMe Flutter SDK for affiliate attribution through the native GoMarketMe cores.'
   s.homepage         = 'https://gomarketme.co'

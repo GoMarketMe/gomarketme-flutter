@@ -19,12 +19,44 @@ public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "getReferralCodeSettings":
+            handleReferralCodeSettings(result: result)
+        case "showReferralCodeSheet":
+            handleReferralCodeSheet(call, result: result)
         case "initialize":
             handleInitialize(call, result: result)
         case "syncAllTransactions":
             handleSyncAllTransactions(result: result)
         default:
             result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func handleReferralCodeSettings(result: @escaping FlutterResult) {
+        guard let appleCore = core else {
+            result(FlutterError(code: "not_initialized", message: "Initialize GoMarketMe first.", details: nil))
+            return
+        }
+        Task {
+            do {
+                let settings = try await appleCore.referralCodeSettings()
+                DispatchQueue.main.async { result(settings) }
+            } catch {
+                DispatchQueue.main.async {
+                    result(FlutterError(code: "referral_settings_failed", message: error.localizedDescription, details: nil))
+                }
+            }
+        }
+    }
+
+    private func handleReferralCodeSheet(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let appleCore = core else {
+            result(FlutterError(code: "not_initialized", message: "Initialize GoMarketMe first.", details: nil))
+            return
+        }
+        Task { @MainActor in
+            do { try await appleCore.showReferralCodeSheet(showTrigger: (call.arguments as? [String: Any])?["showTrigger"] as? Bool ?? false) { result($0) } }
+            catch { result(FlutterError(code: "referral_failed", message: error.localizedDescription, details: nil)) }
         }
     }
 

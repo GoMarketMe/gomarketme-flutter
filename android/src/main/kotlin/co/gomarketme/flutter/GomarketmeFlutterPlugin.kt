@@ -1,6 +1,9 @@
 package co.gomarketme.flutter
 
 import android.content.Context
+import android.app.Activity
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import android.util.Log
 import co.gomarketme.core.GoMarketMeGoogleCore
 import co.gomarketme.core.GoMarketMeGoogleCoreConfiguration
@@ -12,7 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
+    private var activity: Activity? = null
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) { activity = binding.activity }
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) { activity = binding.activity }
+    override fun onDetachedFromActivity() { activity = null }
+    override fun onDetachedFromActivityForConfigChanges() { activity = null }
     private lateinit var context: Context
     private lateinit var methodChannel: MethodChannel
     private var core: GoMarketMeGoogleCore? = null
@@ -32,9 +40,36 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "getReferralCodeSettings" -> getReferralCodeSettings(result)
+            "showReferralCodeSheet" -> showReferralCodeSheet(call, result)
             "initialize" -> initialize(call, result)
             "syncAllTransactions" -> syncAllTransactions(result)
             else -> result.notImplemented()
+        }
+    }
+
+    private fun getReferralCodeSettings(result: MethodChannel.Result) {
+        val googleCore = core
+        if (googleCore == null) {
+            result.error("not_initialized", "Initialize GoMarketMe first.", null)
+            return
+        }
+        scope.launch {
+            try { result.success(googleCore.referralCodeSettings()) }
+            catch (error: Exception) { result.error("referral_settings_failed", error.message, null) }
+        }
+    }
+
+    private fun showReferralCodeSheet(call: MethodCall, result: MethodChannel.Result) {
+        val googleCore = core
+        val host = activity
+        if (googleCore == null || host == null) {
+            result.error("unavailable", "Initialize GoMarketMe and attach an Activity first.", null)
+            return
+        }
+        scope.launch {
+            try { googleCore.showReferralCodeSheet(host, call.argument<Boolean>("showTrigger") ?: false) { result.success(it) } }
+            catch (error: Exception) { result.error("referral_failed", error.message, null) }
         }
     }
 

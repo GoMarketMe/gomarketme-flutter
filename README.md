@@ -19,14 +19,14 @@ This will add a line like this to your app's `pubspec.yaml` and run an implicit 
 
 ```yaml
 dependencies:
-  gomarketme: ^5.0.5
+  gomarketme: ^6.0.0
 ```
 
 ## Usage
 
 GoMarketMe takes only a few lines to set up.
 
-### Step 1/3: Initialize
+### Step 1: Initialize
 
 Import `gomarketme` and initialize the SDK with your GoMarketMe API key.
 
@@ -47,52 +47,7 @@ Future<void> main() async {
 
 Replace `API_KEY` with your actual GoMarketMe API key. You can find it during onboarding or in **Profile > [API Key](https://gomarketme.net/marketer/profile/#account-settings)**.
 
-### Alternative Step 1/3: Programmatic Affiliate Marketing
-
-For apps that want to customize the user experience based on affiliate attribution, initialize GoMarketMe and read affiliate marketing data after initialization.
-
-This enables [Programmatic Affiliate Marketing](https://gomarketme.co/programmatic-affiliate-marketing/), including affiliate-aware paywalls, personalized onboarding, promotions, and custom in-app experiences.
-
-```dart
-import 'package:flutter/material.dart';
-import 'package:gomarketme/gomarketme.dart';
-
-final goMarketMeSDK = GoMarketMe();
-GoMarketMeAffiliateMarketingData? affiliateData;
-
-Future<void> initializeGoMarketMe(String apiKey) async {
-  await goMarketMeSDK.initialize(apiKey);
-
-  final data = goMarketMeSDK.affiliateMarketingData;
-
-  if (data == null) {
-    debugPrint('No GoMarketMe affiliate data found.');
-    return;
-  }
-
-  // Maps to GoMarketMe > Affiliates > Export > id column.
-  debugPrint('Affiliate ID: ${data.affiliate.id}');
-
-  // Maps to GoMarketMe > Campaigns > [Name] > Affiliate\'s Revenue Split (%).
-  debugPrint('Affiliate %: ${data.saleDistribution.affiliatePercentage}');
-
-  // Maps to GoMarketMe > Campaigns > [Name] > id in the URL.
-  debugPrint('Campaign ID: ${data.campaign.id}');
-
-  // Use this data to customize onboarding, paywalls, promotions, or in-app experiences.
-  affiliateData = data;
-}
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await initializeGoMarketMe('API_KEY');
-
-  runApp(const MyApp());
-}
-```
-
-### Step 2/3: Sync after purchase
+### Step 2: Sync Purchases (optional but recommended)
 
 After your app completes a purchase through `in_app_purchase`, RevenueCat, Adapty, or another in-app purchase provider, call:
 
@@ -100,18 +55,9 @@ After your app completes a purchase through `in_app_purchase`, RevenueCat, Adapt
 await goMarketMeSDK.syncAllTransactions();
 ```
 
-If your purchase library lets you decide when to finish, acknowledge, consume, or complete the transaction, call `syncAllTransactions()` first.
+Call it before completing a purchase when your purchase library controls that step.
 
-```dart
-final purchaseParam = PurchaseParam(productDetails: productDetails);
-await InAppPurchase.instance.buyConsumable(purchaseParam: purchaseParam);
-
-// After you receive a successful purchase update:
-await goMarketMeSDK.syncAllTransactions();
-await InAppPurchase.instance.completePurchase(purchaseDetails);
-```
-
-### Step 3/3: iOS consumables only
+### Step 3: Only for iOS consumables
 
 If your iOS app sells consumable in-app purchases, add this key to your app's `ios/Runner/Info.plist`:
 
@@ -120,7 +66,42 @@ If your iOS app sells consumable in-app purchases, add this key to your app's `i
 <true/>
 ```
 
-That's it. GoMarketMe automatically attributes and reports affiliate sales.
+That's it. GoMarketMe will automatically attribute and report affiliate sales in real time to your dashboard and your affiliates' dashboards.
+
+## Optional
+
+### Step 4: Referral Codes
+
+Referral codes work alongside affiliate links when a link isn't practical, such as in conversations, podcasts, videos, events, or print.
+
+Enable Referral Codes in one line. Place the referral UI on the first screen users see after installing the app, ideally during onboarding or immediately afterward:
+
+```dart
+GoMarketMe().showReferralCodeTrigger()
+```
+
+Customize its text, colors, typography, and layout directly in [https://gomarketme.net/marketer/settings#referral-codes](https://gomarketme.net/marketer/settings#referral-codes).
+
+Learn more about [Referral Codes](https://gomarketme.co/referral-codes/).
+
+### Step 5: Programmatic Affiliate Marketing
+
+Programmatic Affiliate Marketing lets your app personalize the user experience based on the affiliate and campaign that referred the user. For example, you can customize onboarding, paywalls, offers, or in-app content.
+
+After awaiting initialization, read `affiliateMarketingData`:
+
+```dart
+await goMarketMeSDK.initialize('API_KEY');
+
+final data = goMarketMeSDK.affiliateMarketingData;
+if (data != null) {
+  debugPrint('Affiliate ID: ${data.affiliate.id}');
+  debugPrint('Affiliate %: ${data.saleDistribution.affiliatePercentage}');
+  debugPrint('Campaign ID: ${data.campaign.id}');
+}
+```
+
+Learn more about [Programmatic Affiliate Marketing](https://gomarketme.co/programmatic-affiliate-marketing/).
 
 ## Platform Support
 
