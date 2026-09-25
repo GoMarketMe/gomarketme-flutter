@@ -7,6 +7,10 @@
 
 [![License: MIT][license_badge]][license_link]
 
+## Sample app
+
+See the complete [GoMarketMe Flutter sample app](https://github.com/GoMarketMe/gomarketme-flutterflow-sample-app) for a working iOS and Android integration, including initialization, referral codes, purchase syncing, and Programmatic Affiliate Marketing.
+
 ## Installation
 
 Run this command:
@@ -47,15 +51,15 @@ Future<void> main() async {
 
 Replace `API_KEY` with your actual GoMarketMe API key. You can find it during onboarding or in **Profile > [API Key](https://gomarketme.net/marketer/profile/#account-settings)**.
 
-### Step 2: Sync Purchases (optional but recommended)
+### Step 2: Sync Purchases (recommended)
 
-After your app completes a purchase through `in_app_purchase`, RevenueCat, Adapty, or another in-app purchase provider, call:
+GoMarketMe automatically detects and reports purchases. For additional reliability, we also recommend manually syncing after `in_app_purchase`, RevenueCat, Adapty, or another provider confirms a successful purchase:
 
 ```dart
 await goMarketMeSDK.syncAllTransactions();
 ```
 
-Call it before completing a purchase when your purchase library controls that step.
+Call it before completing the purchase when your purchase library controls that step.
 
 ### Step 3: Only for iOS consumables
 
@@ -74,11 +78,13 @@ That's it. GoMarketMe will automatically attribute and report affiliate sales in
 
 Referral codes work alongside affiliate links when a link isn't practical, such as in conversations, podcasts, videos, events, or print.
 
-Enable Referral Codes in one line. Place the referral UI on the first screen users see after installing the app, ideally during onboarding or immediately afterward:
+Enable Referral Codes in one line:
 
 ```dart
 GoMarketMe().showReferralCodeTrigger()
 ```
+
+**Placement:** Put this referral UI on the first screen users see after installing the app, ideally during onboarding or immediately afterward.
 
 Customize its text, colors, typography, and layout directly in [https://gomarketme.net/marketer/settings#referral-codes](https://gomarketme.net/marketer/settings#referral-codes).
 
