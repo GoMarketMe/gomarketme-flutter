@@ -59,6 +59,82 @@ void main() {
         throwsA(isA<PlatformException>()),
       );
       expect(GoMarketMe().affiliateMarketingData, same(result));
+
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        throw PlatformException(
+          code: 'referral_code_error',
+          message: 'Referral request failed (invalid_code, HTTP 422).',
+          details: <String, dynamic>{
+            'code': 'invalid_code',
+            'statusCode': 422,
+            'isRetryable': false,
+          },
+        );
+      });
+      await expectLater(
+        GoMarketMe().redeemReferralCode('NOT-A-CODE'),
+        throwsA(
+          isA<GoMarketMeReferralCodeException>()
+              .having(
+                (error) => error.code,
+                'code',
+                GoMarketMeReferralCodeErrorCode.invalidCode,
+              )
+              .having((error) => error.rawCode, 'rawCode', 'invalid_code')
+              .having((error) => error.statusCode, 'statusCode', 422)
+              .having((error) => error.isRetryable, 'isRetryable', false),
+        ),
+      );
+      expect(GoMarketMe().affiliateMarketingData, same(result));
+      messenger.setMockMethodCallHandler(channel, null);
+    },
+  );
+
+  test(
+    'programmatic redemption returns metadata and updates public data',
+    () async {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'initialize')
+          return <String, dynamic>{'initialized': true};
+        expect(call.method, 'redeemReferralCode');
+        expect(call.arguments, <String, dynamic>{'code': 'JAKE10'});
+        return <String, dynamic>{
+          ...affiliate,
+          'campaign': <String, dynamic>{
+            'id': 'campaign',
+            'metadata': <String, dynamic>{'paywall_variant': 'creator-offer'},
+          },
+          'affiliate': <String, dynamic>{
+            'id': 'creator',
+            'metadata': <String, dynamic>{
+              'profile_image_url': 'https://example.com/jake.jpg',
+            },
+          },
+          'affiliate_campaign': <String, dynamic>{
+            'metadata': <String, dynamic>{
+              'offers': <String, dynamic>{
+                'ios': <String, dynamic>{
+                  'monthly': <String, dynamic>{'code': 'MONTHLY10'},
+                },
+              },
+            },
+          },
+          'referral_code': 'JAKE10',
+        };
+      });
+      await GoMarketMe().initialize('test-key');
+      final result = await GoMarketMe().redeemReferralCode('JAKE10');
+      expect(result.campaign.metadata['paywall_variant'], 'creator-offer');
+      expect(
+        result.affiliate.metadata['profile_image_url'],
+        'https://example.com/jake.jpg',
+      );
+      expect(
+        ((result.affiliateCampaign.metadata['offers'] as Map)['ios']
+            as Map)['monthly'],
+        <String, dynamic>{'code': 'MONTHLY10'},
+      );
+      expect(GoMarketMe().affiliateMarketingData, same(result));
       messenger.setMockMethodCallHandler(channel, null);
     },
   );

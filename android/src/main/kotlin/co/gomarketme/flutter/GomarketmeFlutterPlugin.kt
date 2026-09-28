@@ -7,6 +7,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import android.util.Log
 import co.gomarketme.core.GoMarketMeGoogleCore
 import co.gomarketme.core.GoMarketMeGoogleCoreConfiguration
+import co.gomarketme.core.GoMarketMeReferralException
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -42,6 +43,7 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, 
         when (call.method) {
             "getReferralCodeSettings" -> getReferralCodeSettings(result)
             "showReferralCodeSheet" -> showReferralCodeSheet(call, result)
+            "redeemReferralCode" -> redeemReferralCode(call, result)
             "initialize" -> initialize(call, result)
             "syncAllTransactions" -> syncAllTransactions(result)
             else -> result.notImplemented()
@@ -70,6 +72,45 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, 
         scope.launch {
             try { googleCore.showReferralCodeSheet(host, call.argument<Boolean>("showTrigger") ?: false) { result.success(it) } }
             catch (error: Exception) { result.error("referral_failed", error.message, null) }
+        }
+    }
+
+    private fun redeemReferralCode(call: MethodCall, result: MethodChannel.Result) {
+        val googleCore = core
+        if (googleCore == null) {
+            result.error("not_initialized", "Initialize GoMarketMe first.", null)
+            return
+        }
+        val code = call.argument<String>("code")
+        if (code == null) {
+            result.error("invalid_arguments", "code is required", null)
+            return
+        }
+        scope.launch {
+            try { result.success(googleCore.redeemReferralCode(code)) }
+            catch (error: Exception) {
+                val rawCode = when (error) {
+                    is GoMarketMeReferralException -> error.code
+                    is java.net.SocketTimeoutException -> "timeout"
+                    is java.io.IOException -> "network_error"
+                    else -> "request_failed"
+                }
+                val statusCode = (error as? GoMarketMeReferralException)
+                    ?.statusCode
+                    ?.takeIf { it > 0 }
+                val isRetryable = rawCode == "network_error" || rawCode == "timeout" ||
+                    statusCode == 408 || statusCode == 425 || statusCode == 429 ||
+                    (statusCode != null && statusCode >= 500)
+                result.error(
+                    "referral_code_error",
+                    error.message,
+                    mapOf(
+                        "code" to rawCode,
+                        "statusCode" to statusCode,
+                        "isRetryable" to isRetryable
+                    )
+                )
+            }
         }
     }
 

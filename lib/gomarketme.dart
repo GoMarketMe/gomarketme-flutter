@@ -2,9 +2,59 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+enum GoMarketMeReferralCodeErrorCode {
+  invalidCode,
+  expiredCode,
+  inactiveCode,
+  invalidResponse,
+  requestFailed,
+  networkError,
+  timeout,
+  notInitialized,
+  unknown,
+}
+
+class GoMarketMeReferralCodeException implements Exception {
+  final GoMarketMeReferralCodeErrorCode code;
+  final String rawCode;
+  final int? statusCode;
+  final bool isRetryable;
+  final String message;
+
+  const GoMarketMeReferralCodeException({
+    required this.code,
+    required this.rawCode,
+    required this.message,
+    this.statusCode,
+    this.isRetryable = false,
+  });
+
+  factory GoMarketMeReferralCodeException.fromPlatformException(
+    PlatformException error,
+  ) {
+    final details = _asMap(error.details);
+    final rawCode = _asString(details['code']).isNotEmpty
+        ? _asString(details['code'])
+        : error.code;
+    final statusCode = _asNullableInt(details['statusCode']);
+    return GoMarketMeReferralCodeException(
+      code: _referralErrorCode(rawCode),
+      rawCode: rawCode,
+      statusCode: statusCode,
+      isRetryable:
+          details['isRetryable'] as bool? ?? _isRetryable(rawCode, statusCode),
+      message: error.message ?? 'Referral code redemption failed.',
+    );
+  }
+
+  @override
+  String toString() => message;
+}
+
 class GoMarketMeAffiliateMarketingData {
   final Campaign campaign;
   final Affiliate affiliate;
+  final AffiliateCampaign affiliateCampaign;
   final SaleDistribution saleDistribution;
   final String affiliateCampaignCode;
   final String deviceId;
@@ -14,6 +64,7 @@ class GoMarketMeAffiliateMarketingData {
   const GoMarketMeAffiliateMarketingData({
     required this.campaign,
     required this.affiliate,
+    this.affiliateCampaign = const AffiliateCampaign(),
     required this.saleDistribution,
     required this.affiliateCampaignCode,
     required this.deviceId,
@@ -31,6 +82,9 @@ class GoMarketMeAffiliateMarketingData {
     return GoMarketMeAffiliateMarketingData(
       campaign: Campaign.fromJson(_asMap(json['campaign'])),
       affiliate: Affiliate.fromJson(_asMap(json['affiliate'])),
+      affiliateCampaign: AffiliateCampaign.fromJson(
+        _asMap(json['affiliate_campaign']),
+      ),
       saleDistribution: SaleDistribution.fromJson(
         _asMap(json['sale_distribution']),
       ),
@@ -45,6 +99,7 @@ class GoMarketMeAffiliateMarketingData {
     return <String, dynamic>{
       'campaign': campaign.toJson(),
       'affiliate': affiliate.toJson(),
+      'affiliate_campaign': affiliateCampaign.toJson(),
       'sale_distribution': saleDistribution.toJson(),
       'affiliate_campaign_code': affiliateCampaignCode,
       'device_id': deviceId,
@@ -60,6 +115,7 @@ class Campaign {
   final String status;
   final String type;
   final String? publicLinkUrl;
+  final Map<String, dynamic> metadata;
 
   const Campaign({
     required this.id,
@@ -67,6 +123,7 @@ class Campaign {
     required this.status,
     required this.type,
     this.publicLinkUrl,
+    this.metadata = const <String, dynamic>{},
   });
 
   factory Campaign.fromJson(Map<String, dynamic> json) {
@@ -76,6 +133,7 @@ class Campaign {
       status: _asString(json['status']),
       type: _asString(json['type']),
       publicLinkUrl: json['public_link_url']?.toString(),
+      metadata: _asMap(json['metadata']),
     );
   }
 
@@ -86,6 +144,7 @@ class Campaign {
       'status': status,
       'type': type,
       'public_link_url': publicLinkUrl,
+      'metadata': metadata,
     };
   }
 }
@@ -98,6 +157,7 @@ class Affiliate {
   final String instagramAccount;
   final String tiktokAccount;
   final String xAccount;
+  final Map<String, dynamic> metadata;
 
   const Affiliate({
     required this.id,
@@ -107,6 +167,7 @@ class Affiliate {
     required this.instagramAccount,
     required this.tiktokAccount,
     required this.xAccount,
+    this.metadata = const <String, dynamic>{},
   });
 
   factory Affiliate.fromJson(Map<String, dynamic> json) {
@@ -118,6 +179,7 @@ class Affiliate {
       instagramAccount: _asString(json['instagram_account']),
       tiktokAccount: _asString(json['tiktok_account']),
       xAccount: _asString(json['x_account']),
+      metadata: _asMap(json['metadata']),
     );
   }
 
@@ -130,8 +192,21 @@ class Affiliate {
       'instagram_account': instagramAccount,
       'tiktok_account': tiktokAccount,
       'x_account': xAccount,
+      'metadata': metadata,
     };
   }
+}
+
+class AffiliateCampaign {
+  final Map<String, dynamic> metadata;
+
+  const AffiliateCampaign({this.metadata = const <String, dynamic>{}});
+
+  factory AffiliateCampaign.fromJson(Map<String, dynamic> json) {
+    return AffiliateCampaign(metadata: _asMap(json['metadata']));
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{'metadata': metadata};
 }
 
 class SaleDistribution {
@@ -197,7 +272,7 @@ class GoMarketMe {
   );
 
   static const String _sdkType = 'Flutter';
-  static const String _sdkVersion = '6.0.0';
+  static const String _sdkVersion = '6.0.1';
 
   bool _isInitialized = false;
   Future<void>? _initializationFuture;
@@ -327,6 +402,42 @@ class GoMarketMe {
     return data;
   }
 
+  /// Redeems a referral code from an app-owned UI and returns the resulting attribution data.
+  Future<GoMarketMeAffiliateMarketingData> redeemReferralCode(
+    String code,
+  ) async {
+    if (!_isInitialized) {
+      final initialization = _initializationFuture;
+      if (initialization != null) await initialization;
+    }
+    if (!_isInitialized) {
+      throw const GoMarketMeReferralCodeException(
+        code: GoMarketMeReferralCodeErrorCode.notInitialized,
+        rawCode: 'not_initialized',
+        message: 'Initialize GoMarketMe before redeeming a referral code.',
+      );
+    }
+    final dynamic response;
+    try {
+      response = await _methodChannel.invokeMethod<dynamic>(
+        'redeemReferralCode',
+        <String, dynamic>{'code': code},
+      );
+    } on PlatformException catch (error) {
+      throw GoMarketMeReferralCodeException.fromPlatformException(error);
+    }
+    final data = GoMarketMeAffiliateMarketingData.fromJson(_asMap(response));
+    if (data == null) {
+      throw const GoMarketMeReferralCodeException(
+        code: GoMarketMeReferralCodeErrorCode.invalidResponse,
+        rawCode: 'invalid_response',
+        message: 'GoMarketMe returned an invalid referral-code response.',
+      );
+    }
+    _affiliateMarketingData = data;
+    return data;
+  }
+
   Future<GoMarketMeTransactionSyncResult> syncAllTransactions() async {
     if (!_isInitialized) {
       final initialization = _initializationFuture;
@@ -350,6 +461,40 @@ class GoMarketMe {
       debugPrint('[GoMarketMe] $message');
     }
   }
+}
+
+GoMarketMeReferralCodeErrorCode _referralErrorCode(String rawCode) {
+  switch (rawCode) {
+    case 'invalid_code':
+    case 'invalid_arguments':
+      return GoMarketMeReferralCodeErrorCode.invalidCode;
+    case 'expired_code':
+      return GoMarketMeReferralCodeErrorCode.expiredCode;
+    case 'inactive_code':
+      return GoMarketMeReferralCodeErrorCode.inactiveCode;
+    case 'invalid_response':
+      return GoMarketMeReferralCodeErrorCode.invalidResponse;
+    case 'request_failed':
+    case 'referral_failed':
+      return GoMarketMeReferralCodeErrorCode.requestFailed;
+    case 'network_error':
+      return GoMarketMeReferralCodeErrorCode.networkError;
+    case 'timeout':
+      return GoMarketMeReferralCodeErrorCode.timeout;
+    case 'not_initialized':
+      return GoMarketMeReferralCodeErrorCode.notInitialized;
+    default:
+      return GoMarketMeReferralCodeErrorCode.unknown;
+  }
+}
+
+bool _isRetryable(String rawCode, int? statusCode) {
+  return rawCode == 'network_error' ||
+      rawCode == 'timeout' ||
+      statusCode == 408 ||
+      statusCode == 425 ||
+      statusCode == 429 ||
+      (statusCode != null && statusCode >= 500);
 }
 
 /// A remotely configured button or link that opens the referral-code sheet.
@@ -576,6 +721,13 @@ int _asInt(dynamic value) {
   }
 
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+int? _asNullableInt(dynamic value) {
+  if (value is int) return value > 0 ? value : null;
+  if (value is num) return value.toInt() > 0 ? value.toInt() : null;
+  final parsed = int.tryParse(value?.toString() ?? '');
+  return parsed != null && parsed > 0 ? parsed : null;
 }
 
 bool _asBool(dynamic value) {

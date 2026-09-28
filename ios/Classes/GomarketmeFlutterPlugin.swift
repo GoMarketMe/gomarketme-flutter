@@ -23,6 +23,8 @@ public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
             handleReferralCodeSettings(result: result)
         case "showReferralCodeSheet":
             handleReferralCodeSheet(call, result: result)
+        case "redeemReferralCode":
+            handleRedeemReferralCode(call, result: result)
         case "initialize":
             handleInitialize(call, result: result)
         case "syncAllTransactions":
@@ -58,6 +60,48 @@ public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
             do { try await appleCore.showReferralCodeSheet(showTrigger: (call.arguments as? [String: Any])?["showTrigger"] as? Bool ?? false) { result($0) } }
             catch { result(FlutterError(code: "referral_failed", message: error.localizedDescription, details: nil)) }
         }
+    }
+
+    private func handleRedeemReferralCode(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let appleCore = core else {
+            result(FlutterError(code: "not_initialized", message: "Initialize GoMarketMe first.", details: nil))
+            return
+        }
+        guard let code = (call.arguments as? [String: Any])?["code"] as? String else {
+            result(FlutterError(code: "invalid_arguments", message: "code is required", details: nil))
+            return
+        }
+        Task {
+            do { result(try await appleCore.redeemReferralCode(code)) }
+            catch { result(Self.referralFlutterError(error)) }
+        }
+    }
+
+    private static func referralFlutterError(_ error: Error) -> FlutterError {
+        let rawCode: String
+        let statusCode: Int?
+        if let referralError = error as? GoMarketMeReferralError {
+            rawCode = referralError.code
+            statusCode = referralError.statusCode > 0 ? referralError.statusCode : nil
+        } else if let urlError = error as? URLError {
+            rawCode = urlError.code == .timedOut ? "timeout" : "network_error"
+            statusCode = nil
+        } else {
+            rawCode = "request_failed"
+            statusCode = nil
+        }
+        let retryable = rawCode == "network_error" || rawCode == "timeout" ||
+            statusCode == 408 || statusCode == 425 || statusCode == 429 ||
+            (statusCode.map { $0 >= 500 } ?? false)
+        return FlutterError(
+            code: "referral_code_error",
+            message: error.localizedDescription,
+            details: [
+                "code": rawCode,
+                "statusCode": statusCode.map { $0 as Any } ?? NSNull(),
+                "isRetryable": retryable
+            ]
+        )
     }
 
     private func handleSyncAllTransactions(result: @escaping FlutterResult) {
