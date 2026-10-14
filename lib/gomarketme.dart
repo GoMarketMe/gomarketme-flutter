@@ -58,6 +58,7 @@ class GoMarketMeAffiliateMarketingData {
   final SaleDistribution saleDistribution;
   final String affiliateCampaignCode;
   final String deviceId;
+  final String? appInstallRef;
   final String? offerCode;
   final String? referralCode;
 
@@ -68,6 +69,7 @@ class GoMarketMeAffiliateMarketingData {
     required this.saleDistribution,
     required this.affiliateCampaignCode,
     required this.deviceId,
+    this.appInstallRef,
     this.offerCode,
     this.referralCode,
   });
@@ -75,7 +77,7 @@ class GoMarketMeAffiliateMarketingData {
   static GoMarketMeAffiliateMarketingData? fromJson(
     Map<String, dynamic>? json,
   ) {
-    if (json == null || json.isEmpty) {
+    if (json == null || _asString(json['affiliate_campaign_code']).isEmpty) {
       return null;
     }
 
@@ -89,7 +91,10 @@ class GoMarketMeAffiliateMarketingData {
         _asMap(json['sale_distribution']),
       ),
       affiliateCampaignCode: _asString(json['affiliate_campaign_code']),
-      deviceId: _asString(json['device_id']),
+      deviceId: json['app_install_ref'] == null
+          ? _asString(json['device_id'])
+          : '',
+      appInstallRef: json['app_install_ref']?.toString(),
       offerCode: json['offer_code']?.toString(),
       referralCode: json['referral_code']?.toString(),
     );
@@ -102,7 +107,10 @@ class GoMarketMeAffiliateMarketingData {
       'affiliate_campaign': affiliateCampaign.toJson(),
       'sale_distribution': saleDistribution.toJson(),
       'affiliate_campaign_code': affiliateCampaignCode,
-      'device_id': deviceId,
+      if (appInstallRef != null)
+        'app_install_ref': appInstallRef
+      else
+        'device_id': deviceId,
       'offer_code': offerCode,
       'referral_code': referralCode,
     };
@@ -265,25 +273,40 @@ class GoMarketMeTransactionSyncResult {
   }
 }
 
-class GoMarketMe {
+class GoMarketMe extends ChangeNotifier with WidgetsBindingObserver {
   static final GoMarketMe _instance = GoMarketMe._internal();
   static const MethodChannel _methodChannel = MethodChannel(
     'co.gomarketme/core',
   );
 
   static const String _sdkType = 'Flutter';
-  static const String _sdkVersion = '6.0.1';
+  static const String _sdkVersion = '6.0.2';
 
   bool _isInitialized = false;
   Future<void>? _initializationFuture;
   GoMarketMeAffiliateMarketingData? _affiliateMarketingData;
   Future<Map<String, dynamic>>? _referralCodeSettingsFuture;
+  String? _apiKey;
+  String? _appInstallRef;
+  String? _attributionMode;
+  bool _observingLifecycle = false;
 
   factory GoMarketMe() => _instance;
 
   GoMarketMe._internal();
 
   bool get isInitialized => _isInitialized;
+  String? get appInstallRef => _appInstallRef;
+  String? get attributionMode => _attributionMode;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _apiKey != null) {
+      initialize(_apiKey!).catchError((Object error) {
+        _log('Unable to refresh attribution settings: $error');
+      });
+    }
+  }
 
   GoMarketMeAffiliateMarketingData? get affiliateMarketingData =>
       _affiliateMarketingData;
@@ -296,20 +319,20 @@ class GoMarketMe {
       return Future<void>.value();
     }
 
-    if (_isInitialized) {
-      _log('Initialization skipped because SDK is already initialized.');
-      return Future<void>.value();
-    }
-
     final pending = _initializationFuture;
     if (pending != null) return pending;
-
+    _apiKey = trimmedApiKey;
+    if (!_observingLifecycle) {
+      WidgetsBinding.instance.addObserver(this);
+      _observingLifecycle = true;
+    }
     final initialization = _initialize(trimmedApiKey);
     _initializationFuture = initialization;
     return initialization;
   }
 
   Future<void> _initialize(String apiKey) async {
+    _isInitialized = false;
     try {
       final result = await _methodChannel
           .invokeMethod<dynamic>('initialize', <String, dynamic>{
@@ -323,17 +346,37 @@ class GoMarketMe {
         final resultMap = result.map<String, dynamic>(
           (dynamic key, dynamic value) => MapEntry(key.toString(), value),
         );
+        if (resultMap['initialized'] != true ||
+            _asString(resultMap['appInstallRef']).isEmpty ||
+            !const [
+              'LinksOnly',
+              'LinksAndReferralCodes',
+              'ReferralCodesOnly',
+            ].contains(resultMap['attributionMode'])) {
+          throw StateError(
+            'GoMarketMe returned invalid initialization settings.',
+          );
+        }
+        _appInstallRef = resultMap['appInstallRef'] as String;
+        _attributionMode = resultMap['attributionMode'] as String;
         _affiliateMarketingData = GoMarketMeAffiliateMarketingData.fromJson(
           _asMap(resultMap['affiliateMarketingData']),
+        );
+      } else {
+        throw StateError(
+          'GoMarketMe returned invalid initialization settings.',
         );
       }
 
       _isInitialized = true;
       _referralCodeSettingsFuture = null;
+      notifyListeners();
     } catch (error, stackTrace) {
-      _initializationFuture = null;
       _log('Error initializing GoMarketMe: $error');
       _log(stackTrace.toString());
+      rethrow;
+    } finally {
+      _initializationFuture = null;
     }
   }
 
@@ -530,8 +573,27 @@ class _GoMarketMeReferralCodeTriggerState
     'triggerButtonPaddingVertical': 10.0,
   };
 
-  late final Future<Map<String, dynamic>> _settings = _loadSettings();
+  late Future<Map<String, dynamic>> _settings = _loadSettings();
   bool _opening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    GoMarketMe().addListener(_configurationChanged);
+  }
+
+  void _configurationChanged() {
+    final settings = _loadSettings();
+    setState(() {
+      _settings = settings;
+    });
+  }
+
+  @override
+  void dispose() {
+    GoMarketMe().removeListener(_configurationChanged);
+    super.dispose();
+  }
 
   Future<Map<String, dynamic>> _loadSettings() async {
     try {

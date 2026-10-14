@@ -38,7 +38,11 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
       expect(sheetCalls, 0);
-      initialization.complete({'initialized': true});
+      initialization.complete({
+        'initialized': true,
+        'appInstallRef': 'install',
+        'attributionMode': 'LinksAndReferralCodes',
+      });
       await initializationFuture;
       final result = await resultFuture;
       expect(sheetCalls, 1);
@@ -95,7 +99,11 @@ void main() {
     () async {
       messenger.setMockMethodCallHandler(channel, (call) async {
         if (call.method == 'initialize')
-          return <String, dynamic>{'initialized': true};
+          return <String, dynamic>{
+            'initialized': true,
+            'appInstallRef': 'install',
+            'attributionMode': 'LinksAndReferralCodes',
+          };
         expect(call.method, 'redeemReferralCode');
         expect(call.arguments, <String, dynamic>{'code': 'JAKE10'});
         return <String, dynamic>{
@@ -150,7 +158,11 @@ void main() {
     messenger.setMockMethodCallHandler(channel, (call) async {
       switch (call.method) {
         case 'initialize':
-          return <String, dynamic>{'initialized': true};
+          return <String, dynamic>{
+            'initialized': true,
+            'appInstallRef': 'install',
+            'attributionMode': 'LinksAndReferralCodes',
+          };
         case 'getReferralCodeSettings':
           settingsCalls += 1;
           return settings.future;

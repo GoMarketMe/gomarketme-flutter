@@ -22,7 +22,7 @@ This will add a line like this to your app's `pubspec.yaml` and run an implicit 
 
 ```yaml
 dependencies:
-  gomarketme: ^6.0.1
+  gomarketme: ^6.0.2
 ```
 
 ## Usage
@@ -152,7 +152,8 @@ The returned data includes:
     "affiliatePercentage": "20"
   },
   "affiliateCampaignCode": "affiliate-campaign-code",
-  "deviceId": "device-id",
+  "appInstallRef": "random-app-install-reference",
+  "deviceId": "", // deprecated in 6.0.2 - use appInstallRef instead
   "offerCode": null, // null unless this is an offer-code campaign
   "referralCode": "ASHLEY10" // null unless attribution used a referral code
 }
@@ -161,7 +162,7 @@ The returned data includes:
 - `campaign.metadata` is configured under **Campaign detail > Advanced > Campaign-level metadata**.
 - `affiliateCampaign.metadata` is configured under **Campaign detail > Affiliates > Invite or edit affiliate > Advanced > Affiliate-level metadata for this campaign**.
 
-Every property shown above is present when attribution exists. Nullable values are `null` when they do not apply. The configurable metadata maps are always present and are empty when no metadata is configured; GoMarketMe returns their free-form contents without interpreting them. If no attribution exists, `affiliateMarketingData` is `null`.
+Every property shown above is present when attribution exists. Nullable values are `null` when they do not apply. Metadata maps are empty when no metadata is configured; GoMarketMe returns their contents without interpreting them. If `affiliateMarketingData.affiliateCampaignCode` is populated, the app install is attributed to an affiliate.
 
 Learn more about [Programmatic Affiliate Marketing](https://gomarketme.co/programmatic-affiliate-marketing/).
 

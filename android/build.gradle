@@ -1,5 +1,5 @@
 group = 'co.gomarketme.flutter'
-version = '6.0.1'
+version = '6.0.2'
 
 buildscript {
     ext.kotlin_version = '2.1.0'
@@ -49,6 +49,6 @@ android {
 }
 
 dependencies {
-    implementation files('libs/core-6.0.0.jar')
+    implementation files('libs/core-6.0.2.jar')
     implementation 'com.android.billingclient:billing:8.3.0'
 }

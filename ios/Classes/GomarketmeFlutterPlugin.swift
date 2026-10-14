@@ -197,20 +197,29 @@ public class GomarketmeFlutterPlugin: NSObject, FlutterPlugin {
         }
 
         Task {
-            let prepared = await appleCore.prepareAttribution(configuration: initialConfiguration)
-            appleCore.configure(prepared.configuration)
-            appleCore.start()
-            self.core = appleCore
+            appleCore.stop()
+            do {
+                let prepared = try await appleCore.prepareAppInstallAttribution(configuration: initialConfiguration)
+                appleCore.configure(prepared.configuration)
+                appleCore.start()
+                self.core = appleCore
 
-            let response: [String: Any] = [
-                "initialized": true,
-                "platform": "ios",
-                "source": prepared.configuration.sourceName,
-                "affiliateMarketingData": prepared.affiliateMarketingData ?? [:]
-            ]
+                let response: [String: Any] = [
+                    "initialized": true,
+                    "platform": "ios",
+                    "source": prepared.configuration.sourceName,
+                    "appInstallRef": prepared.configuration.appInstallRef ?? "",
+                    "attributionMode": prepared.configuration.attributionMode ?? "",
+                    "affiliateMarketingData": prepared.affiliateMarketingData ?? [:]
+                ]
 
-            DispatchQueue.main.async {
-                result(response)
+                DispatchQueue.main.async {
+                    result(response)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    result(FlutterError(code: "initialize_failed", message: error.localizedDescription, details: nil))
+                }
             }
         }
     }

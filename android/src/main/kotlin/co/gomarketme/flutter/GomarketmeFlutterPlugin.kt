@@ -159,6 +159,7 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, 
         )
 
         val googleCore = core ?: GoMarketMeGoogleCore(context)
+        core = googleCore
 
         if (isDebugLoggingEnabled) {
             googleCore.onPurchase = { event -> Log.d(TAG, "purchase observed by core: ${event.toMap()}") }
@@ -167,7 +168,8 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, 
 
         scope.launch {
             try {
-                val prepared = googleCore.prepareAttribution(initialConfig)
+                googleCore.pauseAppInstallAttribution()
+                val prepared = googleCore.prepareAppInstallAttribution(initialConfig)
                 val config = prepared.first
                 val affiliateMarketingData = prepared.second
 
@@ -180,6 +182,8 @@ class GomarketmeFlutterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, 
                         "initialized" to true,
                         "platform" to "android",
                         "source" to config.sourceName,
+                        "appInstallRef" to config.appInstallRef,
+                        "attributionMode" to config.attributionMode,
                         "affiliateMarketingData" to affiliateMarketingData
                     )
                 )
